@@ -42,6 +42,9 @@ class Metronome with ChangeNotifier {
     await player1.setSource(AssetSource('tick1.wav'));
     await player2.setSource(AssetSource('tick2.wav'));
     await player3.setSource(AssetSource('tick3.wav'));
+    await player1.setReleaseMode(ReleaseMode.stop);
+    await player2.setReleaseMode(ReleaseMode.stop);
+    await player3.setReleaseMode(ReleaseMode.stop);
     int currentPulse = 0;
 
     while (isPlaying) {
