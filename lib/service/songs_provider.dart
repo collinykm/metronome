@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
+import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:uuid/uuid.dart';
-
+import "dart:math";
 
 final uuid = Uuid();
 
@@ -27,8 +28,8 @@ I can find the section in the Song's sectionsList and then call the respective u
 */
 
 Song autumnLeaves = Song(songName: "Autumn Leaves", sectionsList: [
-  Section(sectionName: "Head", bars: 32, tempo: 88, accentsList: [2, 1, 1, 1], meter: [4, 4], subdivision: [1, 1]),
-  Section(sectionName: "Double time", bars: 64, tempo: 176, accentsList: [1, 1, 1, 1], meter: [4, 4], subdivision: [1, 1]),
+  Section(sectionName: "Head", bars: 2, tempo: 60, accentsList: [2, 1, 1, 1], meter: [4, 4], subdivision: [1, 1]),
+  Section(sectionName: "Double time", bars: 4, tempo: 120, accentsList: [3, 1, 0, 1], meter: [4, 4], subdivision: [1, 1]),
 ]);
 
 Song takeFive = Song(songName: "Take five", sectionsList: [
@@ -39,7 +40,7 @@ Song takeFive = Song(songName: "Take five", sectionsList: [
 
 
 
-class SongsProvider with ChangeNotifier{
+class SongsProvider with ChangeNotifier, PlaySound{
 
   List<Song> _allSongs = [autumnLeaves, takeFive];
   List<Song> get allSongs => _allSongs;
@@ -47,21 +48,74 @@ class SongsProvider with ChangeNotifier{
 
 
 
-  //Things to do with displaying the different pages
-  bool showSectionPopup = false;
+  //things to do with playing a song
+  bool _isPlaying = false;
+  String _currentlyPlayingSongId = "";
+  String get currentlyPlayingSongId => _currentlyPlayingSongId;
+  void toggleCurrentlyPlayingSongId(String songId) {
+    if( _currentlyPlayingSongId == songId) {
+      _isPlaying = false;
+      _currentlyPlayingSongId = "";
+    } else {
+      _currentlyPlayingSongId = songId;
+
+    }
+    notifyListeners();
+  }
+
+  void playSong() async {
+
+    if (_isPlaying || _currentlyPlayingSongId == "") {
+      return;
+    }
+    _isPlaying = true;
+    initializePlayer();
+    final int songIndex = _allSongs.indexWhere((song) => song.songId == _currentlyPlayingSongId);
+    if (songIndex == -1) return;
+    Song song = _allSongs[songIndex];
+
+    for (Section section in song.sectionsList){
+      int tempo = section.tempo;
+      int bars = section.bars;
+      List<int> accentsList = section.accentsList;
+      List<int> meter = section.meter;
+      List<int> subdivision = section.subdivision;
+      int currentPulse = 0;
+      int totalPulses = bars * meter[0] * subdivision[0];
+      int beatTime = (60 / tempo * pow(10, 6)).toInt();
+      int pulseTime = beatTime ~/ subdivision[0];
+
+      for (int i = 0; i < totalPulses; i++ ) {
+        if (_isPlaying == false) return;
+        int currentBeat = currentPulse ~/ subdivision[0];
+        int pulseInBeat = currentPulse % subdivision[0] + 1;
+        int intensity = accentsList[currentBeat] * subdivision[pulseInBeat];
+        playSound(intensity: intensity);
+        currentPulse++;
+        currentPulse = currentPulse % (meter[0] * subdivision[0]);
+        await Future.delayed(Duration(microseconds: pulseTime));
+      }
+    }
+
+
+  }
+
+
+  //Things to do with displaying the different pages for songs and popups for sections
+
+  bool _showSectionPopup = false;
   String _selectedSongId = "";
   String _selectedSectionId = "";
-
+  bool get showSectionPopup => _showSectionPopup;
   String get selectedSongId => _selectedSongId;
   String get selectedSectionId => _selectedSectionId;
 
   void toggleSectionPopup () {
-    showSectionPopup = !showSectionPopup;
+    _showSectionPopup = !_showSectionPopup;
     notifyListeners();
   }
   void setSelectedSongId(String songId) {
     _selectedSongId = songId;
-    print(_selectedSongId);
     notifyListeners();
   }
   void setSelectedSectionId(String sectionId) {
@@ -76,13 +130,11 @@ class SongsProvider with ChangeNotifier{
   }
 
 
-
-
-
   //methods to do with songs
 
-  void addSong(Song song) {
-    _allSongs.add(song);
+  void addSong(String songName) {
+    _allSongs.add(Song(songName: songName));
+    setSelectedSongId(_allSongs.last.songId);
     notifyListeners();
   }
 
@@ -100,11 +152,17 @@ class SongsProvider with ChangeNotifier{
 
   //methods to do with sections
 
-  void addSectionToSong(String songId, Section section) {
+  void addSectionToSong(String songId) {
     final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
     if (songIndex == -1) return;
+    Song song = _allSongs[songIndex];
 
-    _allSongs[songIndex].sectionsList.add(section);
+    song.sectionsList.add(
+        Section(sectionName: "Section ${song.sectionsList.length + 1}", bars: 8, tempo: 120, accentsList: [1, 1, 1, 1], meter: [4,4], subdivision: [1, 1])
+    );
+    setSelectedSectionId(song.sectionsList.last.sectionId);
+    toggleSectionPopup();
+
     notifyListeners();
   }
 
@@ -118,7 +176,8 @@ class SongsProvider with ChangeNotifier{
     notifyListeners();
   }
 
-  void updateFieldInSection(String songId, String sectionId, String toUpdate, dynamic value){
+  void updateFieldInSection(
+      {required String songId, required String sectionId, required String toUpdate, required dynamic value}){
     final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
     if (songIndex == -1) return;
     final Song songInQuestion = _allSongs[songIndex];

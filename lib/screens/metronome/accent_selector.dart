@@ -16,14 +16,14 @@ class _AccentSelectorState extends State<AccentSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final metronome = Provider.of<Metronome>(context, listen: false);
+    final metronome = Provider.of<MetronomeProvider>(context, listen: false);
 
 
     double screenWidth = MediaQuery.of(context).size.width;
     double accentSelectorWidth = (screenWidth - 2*30 - (metronome.accentsList.length - 1) * 20) / metronome.accentsList.length;
     // the 30 represents the margin on the sides, 20 represents the gap between each selector (so each has a margin of 10)
 
-    return Consumer<Metronome>(
+    return Consumer<MetronomeProvider>(
       builder: (context, metronome, child) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,

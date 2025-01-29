@@ -2,7 +2,9 @@ import "package:flutter/material.dart";
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:math';
 
-class Metronome with ChangeNotifier {
+import 'package:metronome_app/service/play_sound_mixin.dart';
+
+class MetronomeProvider with ChangeNotifier, PlaySound{
 
   int _tempo = 120;
   List<int> _accentsList = [3, 1, 2, 1];
@@ -11,9 +13,13 @@ class Metronome with ChangeNotifier {
   bool _isPlaying = false;
 
 
-  AudioPlayer player1 = AudioPlayer();
-  AudioPlayer player2 = AudioPlayer();
-  AudioPlayer player3 = AudioPlayer();
+  /*
+  explanation on these fields: each element in accentsList represents the pitch of the click.
+  subdivision list goes like this: subdivision[0] represents how many times is each beat getting divided into.
+    ex. i want triplets, them subdivision[0] is 3. if i want sixteenths, then subdivision[0] is 4
+  meter[0] represents how many beats are in each bar. meter[1] represents the value of each beat. so 4 is quarter note, 2 is half note, etc.
+  */
+
 
 
 
@@ -39,12 +45,8 @@ class Metronome with ChangeNotifier {
     }
     _isPlaying = true;
 
-    await player1.setSource(AssetSource('tick1.wav'));
-    await player2.setSource(AssetSource('tick2.wav'));
-    await player3.setSource(AssetSource('tick3.wav'));
-    await player1.setReleaseMode(ReleaseMode.stop);
-    await player2.setReleaseMode(ReleaseMode.stop);
-    await player3.setReleaseMode(ReleaseMode.stop);
+    initializePlayer();
+
     int currentPulse = 0;
 
     while (isPlaying) {
@@ -66,18 +68,7 @@ class Metronome with ChangeNotifier {
     currentPulse = currentPulse % (meter[0] * subdivision[0]);
   }
 
-  void playSound({required int intensity}) async {
-    if (intensity != 0) {
-      switch (intensity) {
-        case 1:
-          await player1.resume();
-        case 2:
-          await player2.resume();
-        case 3:
-          await player3.resume();
-      }
-    }
-  }
+
 
 
 

@@ -65,8 +65,6 @@ class _SectionPopupState extends State<SectionPopup> with SingleTickerProviderSt
     songsProvider.removeListener(doAnimation);
     _controller.dispose();
     songsProvider.clearSectionId();
-    print("disposed");
-
     super.dispose();
   }
 

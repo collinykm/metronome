@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'package:metronome_app/screens/metronome/meter_selector.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
+import 'package:metronome_app/service/play_metronome_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
 
@@ -28,7 +29,7 @@ class _MetronomePageState extends State<MetronomePage> {
 
     return Scaffold(
 
-      body: Consumer<Metronome>(
+      body: Consumer<MetronomeProvider>(
         builder: (context, metronome, child) {
           return Center(
             child: Column(
@@ -44,8 +45,17 @@ class _MetronomePageState extends State<MetronomePage> {
                 const SizedBox(height: 30,),
                 TempoKnob(),
                 Text(metronome.tempo.toString()),
-                TextButton(onPressed: metronome.Play, child: Text("PLAY")),
-                TextButton(onPressed: metronome.Pause, child: Text("PAUSE")),
+                TextButton(onPressed: () {
+                  Provider.of<MetronomeProvider>(context, listen: false).Play(
+                      // tempo: metronome.tempo,
+                      // subdivision: metronome.subdivision,
+                      // meter: metronome.meter,
+                      // accentsList: metronome.accentsList,
+                  );
+                }, child: Text("PLAY")),
+                TextButton(onPressed: () {
+                  Provider.of<MetronomeProvider>(context, listen: false).Pause();
+                }, child: Text("PAUSE")),
 
               ],
             ),

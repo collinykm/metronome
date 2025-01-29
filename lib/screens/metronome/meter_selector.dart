@@ -73,7 +73,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
     return Stack(
       children: [
         Center(
-          child: Consumer<Metronome>(
+          child: Consumer<MetronomeProvider>(
             builder: (context, metronome, child) {
               return ElevatedButton(
                 onPressed: togglePopup,
@@ -113,7 +113,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
                       physics: FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(initialItem: selectedBeatIndex),
                       onSelectedItemChanged: (index) {
-                        Provider.of<Metronome>(context, listen: false).updateMeterBeats(beatsList[index]);
+                        Provider.of<MetronomeProvider>(context, listen: false).updateMeterBeats(beatsList[index]);
                       },
 
                       children:[
@@ -139,7 +139,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
                       controller: FixedExtentScrollController(initialItem: selectedBeatValueIndex),
                       onSelectedItemChanged: (index) {
                         print(index);
-                        Provider.of<Metronome>(context, listen: false).updateMeterValue(beatValueList[index]);
+                        Provider.of<MetronomeProvider>(context, listen: false).updateMeterValue(beatValueList[index]);
                         setState(() {
                           selectedBeatValueIndex = index;
                         });

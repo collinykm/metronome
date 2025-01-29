@@ -35,54 +35,62 @@ class _SongPageState extends State<SongPage> {
           appBar: AppBar(
             title: Text(song.songName),
           ),
-          body: Consumer<SongsProvider>(
 
-            builder: (context, songsProvider, child) {
-              return SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: Stack(
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              songsProvider.addSectionToSong(song.songId);
+            },
+            child: Icon(Icons.add),
+          ),
 
+           
+         body: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (final section in song.sectionsList)
-                                Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Row(
-                                      children: [
-                                        Text(section.sectionName),
-                                        Text("Bars: ${section.bars}"),
-                                        Text("Tempo: ${section.tempo}"),
-                                        IconButton(
-                                          onPressed: () {
-                                            songsProvider.setSelectedSectionId(section.sectionId);
-                                            songsProvider.toggleSectionPopup();
-                                          },
-                                          icon: Icon(Icons.edit))
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
+                        if (song.sectionsList.length == 0)
+                          ElevatedButton(
+                            onPressed: () {
+                              songsProvider.addSectionToSong(song.songId);
+                            },
+                            child: Text(" + Add sections to this song"),
                           ),
-                        ),
+                        
+                        for (final section in song.sectionsList)
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Row(
+                                children: [
+                                  Text(section.sectionName),
+                                  Text("Bars: ${section.bars}"),
+                                  Text("Tempo: ${section.tempo}"),
+                                  IconButton(
+                                    onPressed: () {
+                                      songsProvider.setSelectedSectionId(section.sectionId);
+                                      songsProvider.toggleSectionPopup();
+                                    },
+                                    icon: Icon(Icons.edit))
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                    SectionPopup()
-                  ],
+                  ),
                 ),
-              );
-            },
-
-
+                SectionPopup()
+              ],
+            ),
           ),
+
+
         );
       },
     );

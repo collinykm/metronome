@@ -18,19 +18,19 @@ class _TempoKnobState extends State<TempoKnob> {
 
   @override
   Widget build(BuildContext context) {
-    double totalAngle = Provider.of<Metronome>(context, listen: false).initialAngle();
+    double totalAngle = Provider.of<MetronomeProvider>(context, listen: false).initialAngle();
 
 
     return GestureDetector(
       onPanStart: (details) {
         // Store the initial touch position
-        Provider.of<Metronome>(context, listen: false).setPreviousOffset(details.localPosition);
+        Provider.of<MetronomeProvider>(context, listen: false).setPreviousOffset(details.localPosition);
       },
       onPanUpdate: (details) {
-        Provider.of<Metronome>(context, listen: false).handleSpin(details);
+        Provider.of<MetronomeProvider>(context, listen: false).handleSpin(details);
       },
       onPanEnd: (details) {
-        Provider.of<Metronome>(context, listen: false).setPreviousOffset(null);
+        Provider.of<MetronomeProvider>(context, listen: false).setPreviousOffset(null);
       },
 
 
