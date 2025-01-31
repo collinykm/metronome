@@ -41,6 +41,7 @@ dependencies:
   record: ^5.2.0
   fftea: ^1.5.0+1
   uuid: ^4.5.1
+  string_validator: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ flutter:
     - assets/tick1.wav
     - assets/tick2.wav
     - assets/tick3.wav
+    - assets/subdivision_images
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

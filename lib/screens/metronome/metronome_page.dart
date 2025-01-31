@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'package:metronome_app/screens/metronome/meter_selector.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
-import 'package:metronome_app/service/play_metronome_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
 
@@ -15,14 +14,6 @@ class MetronomePage extends StatefulWidget {
 
 class _MetronomePageState extends State<MetronomePage> {
 
-  bool isMeterDockVisible = false;
-  void toggleSlidingDockMeter() {
-    setState(() {
-      isMeterDockVisible = !isMeterDockVisible;
-    });
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -32,31 +23,48 @@ class _MetronomePageState extends State<MetronomePage> {
       body: Consumer<MetronomeProvider>(
         builder: (context, metronome, child) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Stack(
               children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
 
-                AccentSelector(),
-                MeterSelector(
-                  isVisible: isMeterDockVisible,
-                  toggleDock: toggleSlidingDockMeter,
+                    AccentSelector(),
+                    ElevatedButton(
+                      onPressed: metronome.toggleMeterVisibility,
+                      child: Text("${metronome.meter[0]} / ${metronome.meter[1]}"),
+                    ),
+                    const SizedBox(height: 30,),
+                    TempoKnob(),
+                    Text(metronome.tempo.toString()),
+
+                    //Play button
+                    TextButton(onPressed: () {
+                      Provider.of<MetronomeProvider>(context, listen: false).Play();
+                    }, child: Text("PLAY")),
+
+                    //Pause button
+                    TextButton(onPressed: () {
+                      Provider.of<MetronomeProvider>(context, listen: false).Pause();
+                    }, child: Text("PAUSE")),
+
+                  ],
                 ),
-                const SizedBox(height: 30,),
-                TempoKnob(),
-                Text(metronome.tempo.toString()),
-                TextButton(onPressed: () {
-                  Provider.of<MetronomeProvider>(context, listen: false).Play(
-                      // tempo: metronome.tempo,
-                      // subdivision: metronome.subdivision,
-                      // meter: metronome.meter,
-                      // accentsList: metronome.accentsList,
-                  );
-                }, child: Text("PLAY")),
-                TextButton(onPressed: () {
-                  Provider.of<MetronomeProvider>(context, listen: false).Pause();
-                }, child: Text("PAUSE")),
 
+                if (metronome.isMeterPopupVisible)
+                  GestureDetector(
+                    onTap: () {
+                      metronome.toggleMeterVisibility();
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
+
+                MeterSelector(inSong: false,),
               ],
             ),
           );

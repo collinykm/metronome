@@ -12,6 +12,12 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
   List<int> _meter = [4, 4];
   bool _isPlaying = false;
 
+  int get tempo => _tempo;
+  List<int> get accentsList => _accentsList;
+  List<int> get subdivision => _subdivision;
+  List<int> get meter => _meter;
+  bool get isPlaying => _isPlaying;
+  double initialAngle() => (_tempo - 20)*8*pi/380;
 
   /*
   explanation on these fields: each element in accentsList represents the pitch of the click.
@@ -22,13 +28,12 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
 
 
 
-
-  int get tempo => _tempo;
-  List<int> get accentsList => _accentsList;
-  List<int> get subdivision => _subdivision;
-  List<int> get meter => _meter;
-  bool get isPlaying => _isPlaying;
-  double initialAngle() => (_tempo - 20)*8*pi/380;
+  bool _isMeterPopupVisible = false;
+  bool get isMeterPopupVisible => _isMeterPopupVisible;
+  void toggleMeterVisibility() {
+    _isMeterPopupVisible = !_isMeterPopupVisible;
+    notifyListeners();
+  }
 
 
 
@@ -83,16 +88,17 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
     notifyListeners();
   }
 
-  void updateMeterBeats(int numBeats){
-    meter[0] = numBeats;
-    _accentsList = List.filled(numBeats, 1);
+  void updateMeter(int index, int value){
+    if (index == 0) {
+      meter[0] = value;
+      _accentsList = List.filled(value, 1);
+    } else {
+      meter[index] = value;
+    }
     notifyListeners();
 
   }
-  void updateMeterValue(int beatValue){
-    meter[1] = beatValue;
-    notifyListeners();
-  }
+
 
 
 
@@ -138,17 +144,6 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
 
     _previousOffset = currentOffset;
   }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

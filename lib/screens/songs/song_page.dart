@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/components/popup_dialogue.dart";
 import "package:metronome_app/screens/songs/section/section_popup.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
@@ -34,13 +35,31 @@ class _SongPageState extends State<SongPage> {
         return Scaffold(
           appBar: AppBar(
             title: Text(song.songName),
+            actions: [
+
+              //delete song button
+              IconButton(
+                  onPressed: () async {
+                    bool confirm = await showPopupDialogue(context, "Delete Song", "'${song.songName}' cannot be recovered", "Delete");
+                    if (confirm) {
+                      songsProvider.removeSong(song.songId);
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: Icon(Icons.delete)
+              )
+
+            ],
           ),
 
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              songsProvider.addSectionToSong(song.songId);
-            },
-            child: Icon(Icons.add),
+          floatingActionButton: Visibility(
+            visible: !songsProvider.showSectionPopup,
+            child: FloatingActionButton(
+              onPressed: () {
+                songsProvider.addSectionToSong(song.songId);
+              },
+              child: Icon(Icons.add),
+            ),
           ),
 
            
@@ -54,7 +73,7 @@ class _SongPageState extends State<SongPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (song.sectionsList.length == 0)
+                        if (song.sectionsList.isEmpty)
                           ElevatedButton(
                             onPressed: () {
                               songsProvider.addSectionToSong(song.songId);
@@ -63,21 +82,39 @@ class _SongPageState extends State<SongPage> {
                           ),
                         
                         for (final section in song.sectionsList)
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Row(
-                                children: [
-                                  Text(section.sectionName),
-                                  Text("Bars: ${section.bars}"),
-                                  Text("Tempo: ${section.tempo}"),
-                                  IconButton(
-                                    onPressed: () {
-                                      songsProvider.setSelectedSectionId(section.sectionId);
-                                      songsProvider.toggleSectionPopup();
-                                    },
-                                    icon: Icon(Icons.edit))
-                                ],
+                          Dismissible(
+                            key: Key(section.sectionId),
+                            confirmDismiss: (direction) async {
+                              return showPopupDialogue(context, "Section '${section.sectionName}' cannot be recovered",
+                                  "Section '${section.sectionName}' cannot be recovered", "Delete");
+
+                            },
+                            onDismissed: (direction) {
+                              songsProvider.removeSectionFromSong(song.songId, section.sectionId);
+                            },
+                            background: Container(
+
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(20)
+                              ),
+                            ),
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Row(
+                                  children: [
+                                    Text(section.sectionName),
+                                    Text("Bars: ${section.bars}"),
+                                    Text("Tempo: ${section.tempo}"),
+                                    IconButton(
+                                      onPressed: () {
+                                        songsProvider.setSelectedSectionId(section.sectionId);
+                                        songsProvider.toggleSectionPopup();
+                                      },
+                                      icon: Icon(Icons.edit))
+                                  ],
+                                ),
                               ),
                             ),
                           ),

@@ -46,6 +46,31 @@ class SongsProvider with ChangeNotifier, PlaySound{
   List<Song> get allSongs => _allSongs;
 
 
+  Song getSong(String songId) {
+    return _allSongs[_allSongs.indexWhere((song) => song.songId == songId)];
+  }
+  Section getSection(String songId, String sectionId) {
+    final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
+    final Song songInQuestion = _allSongs[songIndex];
+    final int sectionIndex = songInQuestion.sectionsList.indexWhere((section) => section.sectionId == sectionId);
+    return songInQuestion.sectionsList[sectionIndex];
+  }
+
+  List<int> getAccentsList(String songId, String sectionId) {
+    Section section = getSection(songId, sectionId);
+    return section.accentsList;
+  }
+
+  List<int> getMeter(String songId, String sectionId) {
+    Section section = getSection(songId, sectionId);
+    return section.meter;
+  }
+
+  List<int> getSubdivision(String songId, String sectionId) {
+    Section section = getSection(songId, sectionId);
+    return section.subdivision;
+  }
+
 
 
   //things to do with playing a song
@@ -104,14 +129,20 @@ class SongsProvider with ChangeNotifier, PlaySound{
   //Things to do with displaying the different pages for songs and popups for sections
 
   bool _showSectionPopup = false;
+  bool _isMeterPopupVisible = false;
   String _selectedSongId = "";
   String _selectedSectionId = "";
   bool get showSectionPopup => _showSectionPopup;
+  bool get isMeterPopupVisible => _isMeterPopupVisible;
   String get selectedSongId => _selectedSongId;
   String get selectedSectionId => _selectedSectionId;
 
   void toggleSectionPopup () {
     _showSectionPopup = !_showSectionPopup;
+    notifyListeners();
+  }
+  void toggleMeterPopup () {
+    _isMeterPopupVisible = !_isMeterPopupVisible;
     notifyListeners();
   }
   void setSelectedSongId(String songId) {
@@ -144,19 +175,15 @@ class SongsProvider with ChangeNotifier, PlaySound{
   }
 
   void changeSongName(String songId, String newName) {
-    final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
-    if (songIndex == -1) return;
-    _allSongs[songIndex].updateName(newName);
+    Song song = getSong(songId);
+    song.updateName(newName);
     notifyListeners();
   }
 
   //methods to do with sections
 
   void addSectionToSong(String songId) {
-    final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
-    if (songIndex == -1) return;
-    Song song = _allSongs[songIndex];
-
+    Song song = getSong(songId);
     song.sectionsList.add(
         Section(sectionName: "Section ${song.sectionsList.length + 1}", bars: 8, tempo: 120, accentsList: [1, 1, 1, 1], meter: [4,4], subdivision: [1, 1])
     );
@@ -167,23 +194,13 @@ class SongsProvider with ChangeNotifier, PlaySound{
   }
 
   void removeSectionFromSong(String songId, String sectionId){
-    final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
-    if (songIndex == -1) return;
-    final Song songInQuestion = _allSongs[songIndex];
-    final int sectionIndex = songInQuestion.sectionsList.indexWhere((section) => section.sectionId == sectionId);
-    if (sectionIndex == -1) return;
-    songInQuestion.sectionsList.removeWhere((section) => section.sectionId == sectionId);
+    Song song = getSong(songId);
+    song.sectionsList.removeWhere((section) => section.sectionId == sectionId);
     notifyListeners();
   }
 
-  void updateFieldInSection(
-      {required String songId, required String sectionId, required String toUpdate, required dynamic value}){
-    final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
-    if (songIndex == -1) return;
-    final Song songInQuestion = _allSongs[songIndex];
-    final int sectionIndex = songInQuestion.sectionsList.indexWhere((section) => section.sectionId == sectionId);
-    if (sectionIndex == -1) return;
-    final Section section = songInQuestion.sectionsList[sectionIndex];
+  void updateFieldInSection({required String songId, required String sectionId, required String toUpdate, required dynamic value}){
+    Section section = getSection(songId, sectionId);
     switch (toUpdate) {
       case "name":
         section.updateName(value);
@@ -191,10 +208,6 @@ class SongsProvider with ChangeNotifier, PlaySound{
         section.updateBars(value);
       case "tempo":
         section.updateTempo(value);
-      case "accent":
-        section.updateAccentsList(value);
-      case "meter":
-        section.updateMeter(value);
       case "subdivision":
         section.updateSubdivision(value);
     }
@@ -202,6 +215,17 @@ class SongsProvider with ChangeNotifier, PlaySound{
 
   }
 
+  void updateAccent({required String songId, required String sectionId, required int beat}) {
+    Section section = getSection(songId, sectionId);
+    section.updateAccentsList(beat);
+    notifyListeners();
+  }
+
+  void updateMeter({required String songId, required String sectionId, required int index, required int value}) {
+    Section section = getSection(songId, sectionId);
+    section.updateMeter(index, value);
+    notifyListeners();
+  }
 }
 
 
@@ -247,11 +271,11 @@ class Section{
   void updateTempo(int newTempo) {
     tempo = newTempo;
   }
-  void updateAccentsList(List<int> newAccentList) {
-    accentsList = newAccentList;
+  void updateAccentsList(int beat) {
+    accentsList[beat] = (accentsList[beat] + 1 ) % 4;
   }
-  void updateMeter(List<int> newMeter) {
-    meter = newMeter;
+  void updateMeter(int index, int value) {
+    meter[index] = value;
   }
   void updateSubdivision(List<int> newSubdivision) {
     subdivision = newSubdivision;

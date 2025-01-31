@@ -7,9 +7,7 @@ import 'package:metronome_app/service/songs_provider.dart';
 import 'package:provider/provider.dart';
 
 
-import 'package:record/record.dart';
-import 'package:fftea/fftea.dart'; // Cross-platform FFT package
-import 'dart:typed_data';
+
 void main() {
   runApp(MultiProvider(
     providers: [
@@ -59,6 +57,7 @@ class _NavBarAppState extends State<NavBarApp> {
         Text("Tuner Page"),
         AllSongsPage(),
         Text("Settings Page"),
+        Test()
       ][selectedPageIndex],
     );
   }
@@ -67,4 +66,74 @@ class _NavBarAppState extends State<NavBarApp> {
 
 
 
+class Test extends StatefulWidget {
+  const Test({super.key});
+
+  @override
+  State<Test> createState() => _TestState();
+}
+
+class _TestState extends State<Test> {
+  bool showPopup = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background to detect taps outside the popup
+          if (showPopup)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  showPopup = false; // Hide the popup when tapping outside
+                });
+              },
+              child: Container(
+                color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+
+          // Text and Button
+          Positioned(
+            top: 100, // Adjust as needed
+            right: 20, // Adjust as needed
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Above the Button"), // Text above the button
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      showPopup = !showPopup; // Toggle the popup
+                    });
+                  },
+                  icon: Icon(Icons.open_in_full),
+                ),
+                Text("Below the Button"), // Text below the button
+              ],
+            ),
+          ),
+
+          // Popup
+            AnimatedPositioned(
+              right: showPopup ? 0 : -200, // Slide in from the right
+              duration: Duration(milliseconds: 300),
+              child: Container(
+                height: 200,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                ),
+                child: Center(
+                  child: Text("Popup Content"),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 

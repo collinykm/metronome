@@ -1,19 +1,17 @@
 import "package:flutter/material.dart";
 import "package:metronome_app/service/metronome_provider.dart";
+import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
 
 class MeterSelector extends StatefulWidget {
   MeterSelector({
-
-    required this.isVisible,
-    required this.toggleDock,
+    required this.inSong,
     super.key
   });
 
+  bool inSong;
 
-  final bool isVisible;
-  final Function() toggleDock;
 
   @override
   State<MeterSelector> createState() => _MeterSelectorState();
@@ -23,149 +21,145 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
 
   final List<int> beatsList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
   final List<int> beatValueList = [1, 2, 3, 4, 8];
-  int selectedBeatIndex = 3;
-  int selectedBeatValueIndex = 3;
-  late bool isVisible;
-  late AnimationController _controller;
-  late Animation<Offset> _offsetAnimation;
+  late int selectedBeatIndex;
+  late int selectedBeatValueIndex;
 
-
+  late SongsProvider songsProvider;
 
   @override
   void initState() {
-    super.initState();
+    songsProvider = Provider.of<SongsProvider>(context, listen: false);
 
-    isVisible = widget.isVisible;
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _offsetAnimation = Tween<Offset>(
-      begin: Offset(1.0, 0.0), // Start completely off the screen (right)
-      end: Offset.zero,        // Slide into position
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-  }
-
-  void togglePopup() {
-    if (isVisible) {
-      _controller.reverse();
-    } else {
-      _controller.forward();
+    if (widget.inSong) {
+      songsProvider.addListener(changeDefaultValues);
     }
-    setState(() {
-      isVisible = !isVisible;
-    });
-    widget.toggleDock;
+    selectedBeatIndex = 3;
+    selectedBeatValueIndex = 3;
+
+    super.initState();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    songsProvider.removeListener(changeDefaultValues);
     super.dispose();
   }
 
+
+  void changeDefaultValues () {
+    if (songsProvider.selectedSectionId != "") {
+      List<int> meter = songsProvider.getMeter(songsProvider.selectedSongId, songsProvider.selectedSectionId);
+      selectedBeatIndex = beatsList.indexOf(meter[0]);
+      selectedBeatValueIndex = beatsList.indexOf(meter[1]);
+    }
+  }
+
+
+
+
+  List<int> meter() {
+    if (widget.inSong) {
+      return songsProvider.getMeter(songsProvider.selectedSongId, songsProvider.selectedSectionId);
+    } else {
+      return Provider.of<MetronomeProvider>(context, listen: false).meter;
+    }
+  }
+
+  void updateMeter(int index, int value) {
+    if (widget.inSong) {
+      return songsProvider.updateMeter(songId: songsProvider.selectedSongId, sectionId: songsProvider.selectedSectionId, index: index, value: value);
+    } else {
+      return Provider.of<MetronomeProvider>(context, listen: false).updateMeter(index, value);
+    }
+  }
+
+  bool isMeterPopupVisible() {
+    if (widget.inSong) {
+      return songsProvider.isMeterPopupVisible;
+    } else {
+      return Provider.of<MetronomeProvider>(context, listen: false).isMeterPopupVisible;
+    }
+  }
+
+
+
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Center(
-          child: Consumer<MetronomeProvider>(
-            builder: (context, metronome, child) {
-              return ElevatedButton(
-                onPressed: togglePopup,
-                child: Text("${metronome.meter[0].toString()} / ${metronome.meter[1].toString()}"),
-              );
-            },
-          ),
-        ),
-        if (isVisible)
-          GestureDetector(
-            onTap: togglePopup,
-            child: Container(
-              color: Colors.black.withOpacity(0.1), // Background overlay
+
+    return AnimatedPositioned(
+      duration: Duration(milliseconds: 200),
+      right: isMeterPopupVisible() ? 0 : -150,
+      top: 200,
+      child: Container(
+        width: 150,
+        height: 300,
+        color: Colors.white,
+        child: Row(
+          children: [
+          //select number of beats
+          Container(
+            height: 200,
+            width: 50,
+            child: ListWheelScrollView(
+              itemExtent: 50, // Height of each item
+              diameterRatio: 1.5, // Adjust the size of the wheel
+              physics: FixedExtentScrollPhysics(),
+              controller: FixedExtentScrollController(initialItem: selectedBeatIndex),
+              onSelectedItemChanged: (index) {
+                updateMeter(0, beatsList[index]);
+                setState(() {
+                selectedBeatIndex = index;
+                });
+              },
+
+              children:[
+                for (int i = 0; i < beatsList.length; i++)
+                  Text(beatsList[i].toString(),
+                    style: TextStyle(
+                      color: i == selectedBeatIndex ? Colors.yellow : Colors.black,
+                      fontSize: 20,
+                    ),
+                  )
+              ],
             ),
           ),
 
-        Align(
-          alignment: Alignment.centerRight,
-          child: SlideTransition(
-            position: _offsetAnimation,
-            child: Container(
-              width: 300,
-              height: 300, // Set the height to 300 pixels
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.0), // Rounded corners
-              ),
-              child: Row(
-                children: [
-                  //select number of beats
-                  Container(
-                    height: 200,
-                    width: 50,
-                    child: ListWheelScrollView(
-                      itemExtent: 50, // Height of each item
-                      diameterRatio: 1.5, // Adjust the size of the wheel
-                      physics: FixedExtentScrollPhysics(),
-                      controller: FixedExtentScrollController(initialItem: selectedBeatIndex),
-                      onSelectedItemChanged: (index) {
-                        Provider.of<MetronomeProvider>(context, listen: false).updateMeterBeats(beatsList[index]);
-                      },
+          //select the value of a beat
+          Container(
+            height: 200,
+            width: 50,
 
-                      children:[
-                        for (int i = 0; i < beatsList.length; i++)
-                          Text(beatsList[i].toString(),
-                            style: TextStyle(
-                              color: i == selectedBeatIndex ? Colors.yellow : Colors.black,
-                              fontSize: 20,
-                            ),
-                          )
-                      ],
-                    ),
+            child: ListWheelScrollView(
+              itemExtent: 50, // Height of each item
+              diameterRatio: 1.5, // Adjust the size of the wheel
+              physics: FixedExtentScrollPhysics(),
+              controller: FixedExtentScrollController(initialItem: selectedBeatValueIndex),
+              onSelectedItemChanged: (index) {
+              updateMeter(1, beatValueList[index]);
+                setState(() {
+                  selectedBeatValueIndex = index;
+                });
+              },
+              children:[
+                for (int i = 0; i < beatValueList.length; i++)
+                Text(beatValueList[i].toString(),
+                  style: TextStyle(
+                    color: i == selectedBeatValueIndex ? Colors.yellow : Colors.black,
+                    fontSize: 20,
                   ),
-
-                  //select the value of a beat
-                  Container(
-                    height: 200,
-                    width: 50,
-                    child: ListWheelScrollView(
-                      itemExtent: 50, // Height of each item
-                      diameterRatio: 1.5, // Adjust the size of the wheel
-                      physics: FixedExtentScrollPhysics(),
-                      controller: FixedExtentScrollController(initialItem: selectedBeatValueIndex),
-                      onSelectedItemChanged: (index) {
-                        print(index);
-                        Provider.of<MetronomeProvider>(context, listen: false).updateMeterValue(beatValueList[index]);
-                        setState(() {
-                          selectedBeatValueIndex = index;
-                        });
-                      },
-
-                      children:[
-                        for (int i = 0; i < beatValueList.length; i++)
-                          Text(beatValueList[i].toString(),
-                            style: TextStyle(
-                              color: i == selectedBeatValueIndex ? Colors.yellow : Colors.black,
-                              fontSize: 20,
-                            ),
-                          )
-                      ],
-                    ),
-                  ),
-
-
-                  ElevatedButton(onPressed: togglePopup, child: Icon(Icons.close))
-                ],
-              )
+                )
+              ],
             ),
           ),
+
+          IconButton(onPressed: Provider.of<MetronomeProvider>(context, listen: false).toggleMeterVisibility, icon: Icon(Icons.close))
+
+          ],
         ),
-      ],
+      )
     );
+
+
+
   }
 
 
