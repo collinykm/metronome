@@ -20,7 +20,7 @@ class MeterSelector extends StatefulWidget {
 class _MeterSelectorState extends State<MeterSelector> with SingleTickerProviderStateMixin {
 
   final List<int> beatsList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-  final List<int> beatValueList = [1, 2, 3, 4, 8];
+  final List<int> beatValueList = [2, 4, 8];
   late int selectedBeatIndex;
   late int selectedBeatValueIndex;
 
@@ -34,7 +34,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
       songsProvider.addListener(changeDefaultValues);
     }
     selectedBeatIndex = 3;
-    selectedBeatValueIndex = 3;
+    selectedBeatValueIndex = 1;
 
     super.initState();
   }
@@ -82,6 +82,13 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
   }
 
 
+  void toggleVisibility() {
+    if (widget.inSong) {
+      return songsProvider.toggleMeterPopup();
+    } else {
+      return Provider.of<MetronomeProvider>(context, listen: false).toggleMeterVisibility();
+    }
+  }
 
   Widget build(BuildContext context) {
 
@@ -151,7 +158,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
             ),
           ),
 
-          IconButton(onPressed: Provider.of<MetronomeProvider>(context, listen: false).toggleMeterVisibility, icon: Icon(Icons.close))
+          IconButton(onPressed: toggleVisibility, icon: Icon(Icons.close))
 
           ],
         ),

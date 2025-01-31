@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import 'package:metronome_app/service/play_sound_mixin.dart';
+import 'package:metronome_app/service/subdivision.dart';
 import 'package:uuid/uuid.dart';
 import "dart:math";
 
@@ -28,13 +29,13 @@ I can find the section in the Song's sectionsList and then call the respective u
 */
 
 Song autumnLeaves = Song(songName: "Autumn Leaves", sectionsList: [
-  Section(sectionName: "Head", bars: 2, tempo: 60, accentsList: [2, 1, 1, 1], meter: [4, 4], subdivision: [1, 1]),
-  Section(sectionName: "Double time", bars: 4, tempo: 120, accentsList: [3, 1, 0, 1], meter: [4, 4], subdivision: [1, 1]),
+  Section(sectionName: "Head", bars: 1, tempo: 60, accentsList: [2, 1, 1, 1], meter: [4, 4], subdivision: allSubdivisionsMap[4]![0]),
+  Section(sectionName: "Double time", bars: 1, tempo: 120, accentsList: [3, 1, 0, 1], meter: [4, 4], subdivision: allSubdivisionsMap[4]![0]),
 ]);
 
 Song takeFive = Song(songName: "Take five", sectionsList: [
-  Section(sectionName: "Head", bars: 32, tempo: 120, accentsList: [3, 1, 1, 2, 1], meter: [5, 4], subdivision: [1, 1]),
-  Section(sectionName: "goofy part", bars: 64, tempo: 320, accentsList: [3, 1, 1, 2, 1], meter: [5, 4], subdivision: [1, 1]),
+  Section(sectionName: "Head", bars: 32, tempo: 120, accentsList: [3, 1, 1, 2, 1], meter: [5, 4], subdivision: allSubdivisionsMap[4]![0]),
+  Section(sectionName: "goofy part", bars: 64, tempo: 320, accentsList: [3, 1, 1, 2, 1], meter: [5, 4], subdivision: allSubdivisionsMap[4]![0]),
 ]);
 
 
@@ -66,7 +67,7 @@ class SongsProvider with ChangeNotifier, PlaySound{
     return section.meter;
   }
 
-  List<int> getSubdivision(String songId, String sectionId) {
+  Subdivision getSubdivision(String songId, String sectionId) {
     Section section = getSection(songId, sectionId);
     return section.subdivision;
   }
@@ -104,7 +105,7 @@ class SongsProvider with ChangeNotifier, PlaySound{
       int bars = section.bars;
       List<int> accentsList = section.accentsList;
       List<int> meter = section.meter;
-      List<int> subdivision = section.subdivision;
+      List<int> subdivision = section.subdivision.subdivisionList;
       int currentPulse = 0;
       int totalPulses = bars * meter[0] * subdivision[0];
       int beatTime = (60 / tempo * pow(10, 6)).toInt();
@@ -114,13 +115,23 @@ class SongsProvider with ChangeNotifier, PlaySound{
         if (_isPlaying == false) return;
         int currentBeat = currentPulse ~/ subdivision[0];
         int pulseInBeat = currentPulse % subdivision[0] + 1;
-        int intensity = accentsList[currentBeat] * subdivision[pulseInBeat];
+        int intensity;
+        if (currentPulse % subdivision[0] == 0) {
+          intensity = accentsList[currentBeat] * subdivision[pulseInBeat];
+        } else {
+          intensity = subdivision[pulseInBeat];
+        }
+
         playSound(intensity: intensity);
         currentPulse++;
         currentPulse = currentPulse % (meter[0] * subdivision[0]);
         await Future.delayed(Duration(microseconds: pulseTime));
       }
     }
+
+    _isPlaying = false;
+    _currentlyPlayingSongId = "";
+    notifyListeners();
 
 
   }
@@ -130,20 +141,41 @@ class SongsProvider with ChangeNotifier, PlaySound{
 
   bool _showSectionPopup = false;
   bool _isMeterPopupVisible = false;
+  bool _isSubdivisionPopupVisible = false;
   String _selectedSongId = "";
   String _selectedSectionId = "";
   bool get showSectionPopup => _showSectionPopup;
   bool get isMeterPopupVisible => _isMeterPopupVisible;
+  bool get isSubdivisionPopupVisible => _isSubdivisionPopupVisible;
   String get selectedSongId => _selectedSongId;
   String get selectedSectionId => _selectedSectionId;
 
-  void toggleSectionPopup () {
-    _showSectionPopup = !_showSectionPopup;
-    notifyListeners();
+  void toggleSectionPopup ({bool? setFalse}) {
+    if (setFalse == null) {
+      _showSectionPopup = !_showSectionPopup;
+      notifyListeners();
+    } else {
+      _showSectionPopup = false;
+    }
+
   }
-  void toggleMeterPopup () {
-    _isMeterPopupVisible = !_isMeterPopupVisible;
-    notifyListeners();
+  void toggleMeterPopup ({bool? setFalse}) {
+    if (setFalse == null) {
+      _isMeterPopupVisible = !_isMeterPopupVisible;
+      notifyListeners();
+    } else {
+      _isMeterPopupVisible = false;
+    }
+
+  }
+  void toggleSubdivisionPopup({bool? setFalse}) {
+    if (setFalse == null) {
+      _isSubdivisionPopupVisible = !_isSubdivisionPopupVisible;
+      notifyListeners();
+    } else {
+      _isSubdivisionPopupVisible = false;
+    }
+
   }
   void setSelectedSongId(String songId) {
     _selectedSongId = songId;
@@ -185,7 +217,7 @@ class SongsProvider with ChangeNotifier, PlaySound{
   void addSectionToSong(String songId) {
     Song song = getSong(songId);
     song.sectionsList.add(
-        Section(sectionName: "Section ${song.sectionsList.length + 1}", bars: 8, tempo: 120, accentsList: [1, 1, 1, 1], meter: [4,4], subdivision: [1, 1])
+        Section(sectionName: "Section ${song.sectionsList.length + 1}", bars: 8, tempo: 120, accentsList: [1, 1, 1, 1], meter: [4,4], subdivision: allSubdivisionsMap[4]![0])
     );
     setSelectedSectionId(song.sectionsList.last.sectionId);
     toggleSectionPopup();
@@ -208,8 +240,6 @@ class SongsProvider with ChangeNotifier, PlaySound{
         section.updateBars(value);
       case "tempo":
         section.updateTempo(value);
-      case "subdivision":
-        section.updateSubdivision(value);
     }
     notifyListeners();
 
@@ -224,6 +254,11 @@ class SongsProvider with ChangeNotifier, PlaySound{
   void updateMeter({required String songId, required String sectionId, required int index, required int value}) {
     Section section = getSection(songId, sectionId);
     section.updateMeter(index, value);
+    notifyListeners();
+  }
+
+  void updateSubdivision({required String songId, required String sectionId, required Subdivision sub}) {
+    getSection(songId, sectionId).updateSubdivision(sub);
     notifyListeners();
   }
 }
@@ -251,7 +286,7 @@ class Section{
   int tempo;
   List<int> accentsList;
   List<int> meter;
-  List<int> subdivision;
+  Subdivision subdivision;
 
   Section({
     required this.sectionName,
@@ -277,7 +312,7 @@ class Section{
   void updateMeter(int index, int value) {
     meter[index] = value;
   }
-  void updateSubdivision(List<int> newSubdivision) {
-    subdivision = newSubdivision;
+  void updateSubdivision(Subdivision sub) {
+    subdivision = sub;
   }
 }

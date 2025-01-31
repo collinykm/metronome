@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'package:metronome_app/screens/metronome/meter_selector.dart';
+import 'package:metronome_app/screens/metronome/subdivision_selector.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
@@ -31,10 +32,19 @@ class _MetronomePageState extends State<MetronomePage> {
                   children: [
 
                     AccentSelector(),
+                    
+                    //meter button
                     ElevatedButton(
                       onPressed: metronome.toggleMeterVisibility,
                       child: Text("${metronome.meter[0]} / ${metronome.meter[1]}"),
                     ),
+
+                    //subdivision button
+                    ElevatedButton(
+                      onPressed: metronome.toggleSubdivisionVisibility,
+                      child: Image.asset(metronome.subdivision.imagePath, height: 30, width: 50,),
+                    ),
+                    
                     const SizedBox(height: 30,),
                     TempoKnob(),
                     Text(metronome.tempo.toString()),
@@ -45,9 +55,13 @@ class _MetronomePageState extends State<MetronomePage> {
                     }, child: Text("PLAY")),
 
                     //Pause button
-                    TextButton(onPressed: () {
-                      Provider.of<MetronomeProvider>(context, listen: false).Pause();
-                    }, child: Text("PAUSE")),
+                    TextButton(
+                      onPressed: () {
+                        Provider.of<MetronomeProvider>(context, listen: false).Pause();
+                      }, child: Text("PAUSE")
+                    ),
+
+
 
                   ],
                 ),
@@ -64,7 +78,20 @@ class _MetronomePageState extends State<MetronomePage> {
                     ),
                   ),
 
+                if (metronome.isSubdivisionPopupVisible)
+                  GestureDetector(
+                    onTap: () {
+                      metronome.toggleSubdivisionVisibility();
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
+
                 MeterSelector(inSong: false,),
+                SubdivisionSelector(inSong: false,)
               ],
             ),
           );

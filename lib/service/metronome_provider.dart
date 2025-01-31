@@ -3,18 +3,21 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:math';
 
 import 'package:metronome_app/service/play_sound_mixin.dart';
+import 'package:metronome_app/service/subdivision.dart';
 
 class MetronomeProvider with ChangeNotifier, PlaySound{
 
   int _tempo = 120;
   List<int> _accentsList = [3, 1, 2, 1];
-  List<int> _subdivision = [1, 1];
+  Subdivision _subdivision = allSubdivisionsMap[4]![0];
+
   List<int> _meter = [4, 4];
   bool _isPlaying = false;
 
   int get tempo => _tempo;
   List<int> get accentsList => _accentsList;
-  List<int> get subdivision => _subdivision;
+  Subdivision get subdivision => _subdivision;
+  List<int> get subdivisionList => _subdivision.subdivisionList;
   List<int> get meter => _meter;
   bool get isPlaying => _isPlaying;
   double initialAngle() => (_tempo - 20)*8*pi/380;
@@ -35,7 +38,12 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
     notifyListeners();
   }
 
-
+  bool _isSubdivisionPopupVisible = false;
+  bool get isSubdivisionPopupVisible => _isSubdivisionPopupVisible;
+  void toggleSubdivisionVisibility() {
+    _isSubdivisionPopupVisible = !_isSubdivisionPopupVisible;
+    notifyListeners();
+  }
 
 
 
@@ -53,24 +61,29 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
     initializePlayer();
 
     int currentPulse = 0;
-
     while (isPlaying) {
       int beatTime = (60 / _tempo * pow(10, 6)).toInt();
-      int pulseTime = beatTime ~/ subdivision[0];
+      int pulseTime = beatTime ~/ subdivisionList[0];
       tickInTime(currentPulse);
       currentPulse++;
-      currentPulse = currentPulse % (meter[0] * subdivision[0]);
+      currentPulse = currentPulse % (meter[0] * subdivisionList[0]);
       await Future.delayed(Duration(microseconds: pulseTime));
     }
   }
 
   void tickInTime(int currentPulse) {
-    int currentBeat = currentPulse ~/ subdivision[0];
-    int pulseInBeat = currentPulse % subdivision[0] + 1;
-    int intensity = _accentsList[currentBeat] * subdivision[pulseInBeat];
+    int currentBeat = currentPulse ~/ subdivisionList[0];
+    int pulseInBeat = currentPulse % subdivisionList[0] + 1;
+    int intensity;
+    if (currentPulse % subdivisionList[0] == 0) {
+      intensity = _accentsList[currentBeat] * subdivisionList[pulseInBeat];
+    } else {
+      intensity = subdivisionList[pulseInBeat];
+    }
+
     playSound(intensity: intensity);
     currentPulse++;
-    currentPulse = currentPulse % (meter[0] * subdivision[0]);
+    currentPulse = currentPulse % (meter[0] * subdivisionList[0]);
   }
 
 
@@ -99,6 +112,10 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
 
   }
 
+  void updateSubdivision(Subdivision sub) {
+    _subdivision = sub;
+    notifyListeners();
+  }
 
 
 

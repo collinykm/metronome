@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:metronome_app/screens/metronome/metronome_page.dart';
 import 'package:metronome_app/screens/songs/all_songs_page.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
-import 'package:metronome_app/service/play_metronome_provider.dart';
 import 'package:metronome_app/service/songs_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +12,6 @@ void main() {
     providers: [
       ChangeNotifierProvider(create: (_) => MetronomeProvider()),
       ChangeNotifierProvider(create: (_) => SongsProvider()),
-      ChangeNotifierProvider(create: (_) => PlayMetronomeProvider())
     ],
     child: MaterialApp(
       home: NavBarApp()

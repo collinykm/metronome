@@ -28,7 +28,8 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
           song.songId == songsProvider.selectedSongId).sectionsList
             .firstWhere((section) => section.sectionId == songsProvider.selectedSectionId
         );
-
+        String songId = songsProvider.selectedSongId;
+        String sectionId = songsProvider.selectedSectionId;
 
         return Column(
           children: [
@@ -42,7 +43,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                     showInputDialogue(context: context,
                       handleSubmit: () {
                         String text = controller.text.trim();
-                        songsProvider.updateFieldInSection(songId: songsProvider.selectedSongId, sectionId: section.sectionId, toUpdate: "name", value: text);
+                        songsProvider.updateFieldInSection(songId: songId, sectionId: sectionId, toUpdate: "name", value: text);
                         Navigator.pop(context);
                       },
                       title: "Name this section",
@@ -129,7 +130,11 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                   child: Text("Bars: ${section.bars.toString()}")
                 ),
 
-                Text("Subdivision: ${section.subdivision.toString()}"),
+                //subdivision selector
+                ElevatedButton(
+                  onPressed: songsProvider.toggleSubdivisionPopup,
+                  child: Image.asset(songsProvider.getSubdivision(songId, sectionId).imagePath, height: 30, width: 50,),
+                ),
                 ElevatedButton(onPressed: songsProvider.toggleMeterPopup,
                   child: Text("Meter: ${section.meter.toString()}"),),
 
