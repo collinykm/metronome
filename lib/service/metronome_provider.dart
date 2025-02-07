@@ -73,7 +73,6 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
 
     int currentBeat = (currentPulse ~/ subdivisionList[0]) % meter[0] + 1;
     int pulseInBeat = currentPulse % subdivisionList[0] + 1;
-    print("$currentBeat, $currentPulse");
     int intensity;
     if (currentPulse % subdivisionList[0] == 0) {
       intensity = _accentsList[currentBeat - 1] * subdivisionList[pulseInBeat];
@@ -81,7 +80,6 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
     } else {
       intensity = subdivisionList[pulseInBeat];
     }
-    print(intensity);
     playSound(intensity: intensity);
     currentPulse++;
     currentPulse = currentPulse % (meter[0] * subdivisionList[0]);

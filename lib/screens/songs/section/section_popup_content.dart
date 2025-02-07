@@ -24,7 +24,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
           return Text("No Section selected right now");
 
         Section section = songsProvider.
-        allSongs.firstWhere((song) =>
+        allSongs().firstWhere((song) =>
           song.songId == songsProvider.selectedSongId).sectionsList
             .firstWhere((section) => section.sectionId == songsProvider.selectedSectionId
         );

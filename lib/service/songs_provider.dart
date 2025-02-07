@@ -4,6 +4,8 @@ import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/subdivision.dart';
 import 'package:uuid/uuid.dart';
 import "dart:math";
+part 'songs_provider.g.dart';
+
 
 final uuid = Uuid();
 
@@ -25,8 +27,6 @@ If they want to edit a section, they'll press an edit button, which will pass th
 I can find the section in the Song's sectionsList and then call the respective update functions.
 
 
-
-
 */
 
 Song autumnLeaves = Song(songName: "Autumn Leaves", sectionsList: [
@@ -44,14 +44,20 @@ Song takeFive = Song(songName: "Take five", sectionsList: [
 
 class SongsProvider with ChangeNotifier, PlaySound{
 
+  final Box _songsBox = Hive.box('songsBox');
 
 
   List<Song> _allSongs = [autumnLeaves, takeFive];
-
-  Future<List<Song>> allSongs() async {
-    final box = await Hive.openBox("AllSongs");
-    return box.get("allSongs") ?? [autumnLeaves, takeFive];
+  List<Song> allSongs() {
+    if(_songsBox.get("songs") == null){
+      print("songsBox was null");
+      return _allSongs;
+    }
+    _allSongs = List<Song>.from(_songsBox.get("songs"));
+    return _allSongs;
   }
+
+
 
 
   Song getSong(String songId) {
@@ -202,20 +208,28 @@ class SongsProvider with ChangeNotifier, PlaySound{
 
   //methods to do with songs
 
-  void addSong(String songName) {
+  void addSong(String songName) async {
     _allSongs.add(Song(songName: songName));
     setSelectedSongId(_allSongs.last.songId);
+
+    await _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
   void removeSong(String id) {
     _allSongs.removeWhere((song) => song.songId == id);
+    _selectedSongId = "";
+    _selectedSectionId = "";
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
   void changeSongName(String songId, String newName) {
     Song song = getSong(songId);
     song.updateName(newName);
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
@@ -229,12 +243,15 @@ class SongsProvider with ChangeNotifier, PlaySound{
     setSelectedSectionId(song.sectionsList.last.sectionId);
     toggleSectionPopup();
 
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
   void removeSectionFromSong(String songId, String sectionId){
     Song song = getSong(songId);
     song.sectionsList.removeWhere((section) => section.sectionId == sectionId);
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
@@ -248,51 +265,85 @@ class SongsProvider with ChangeNotifier, PlaySound{
       case "tempo":
         section.updateTempo(value);
     }
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
 
   }
-
   void updateAccent({required String songId, required String sectionId, required int beat}) {
     Section section = getSection(songId, sectionId);
     section.updateAccentsList(beat);
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
   void updateMeter({required String songId, required String sectionId, required int index, required int value}) {
     Section section = getSection(songId, sectionId);
     section.updateMeter(index, value);
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
   void updateSubdivision({required String songId, required String sectionId, required Subdivision sub}) {
     getSection(songId, sectionId).updateSubdivision(sub);
+
+    _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
+
 }
 
 
 
 
-class Song{
-  String songId = uuid.v4();
+
+
+
+@HiveType(typeId: 0)
+class Song {
+  @HiveField(0)
+  String songId;
+
+  @HiveField(1)
   String songName;
+
+  @HiveField(2)
   List<Section> sectionsList;
-  Song({required this.songName, List<Section>? sectionsList }) : sectionsList = sectionsList ?? [];
 
+  Song({required this.songName, List<Section>? sectionsList})
+      : sectionsList = sectionsList ?? [],
+        songId = uuid.v4();
 
-  void updateName(String newName){
+  void updateName(String newName) {
     songName = newName;
   }
-
 }
 
-class Section{
-  String sectionId = uuid.v4();
+
+
+@HiveType(typeId: 1)
+class Section {
+  @HiveField(0)
+  String sectionId;
+
+  @HiveField(1)
   String sectionName;
+
+  @HiveField(2)
   int bars;
+
+  @HiveField(3)
   int tempo;
+
+  @HiveField(4)
   List<int> accentsList;
+
+  @HiveField(5)
   List<int> meter;
+
+  @HiveField(6)
   Subdivision subdivision;
 
   Section({
@@ -302,26 +353,28 @@ class Section{
     required this.accentsList,
     required this.meter,
     required this.subdivision,
-  });
+  }) : sectionId = uuid.v4();
 
-
-
-
-  void updateName(String newName){
+  void updateName(String newName) {
     sectionName = newName;
   }
+
   void updateBars(int numBars) {
     bars = numBars;
   }
+
   void updateTempo(int newTempo) {
     tempo = newTempo;
   }
+
   void updateAccentsList(int beat) {
-    accentsList[beat] = (accentsList[beat] + 1 ) % 4;
+    accentsList[beat] = (accentsList[beat] + 1) % 4;
   }
+
   void updateMeter(int index, int value) {
     meter[index] = value;
   }
+
   void updateSubdivision(Subdivision sub) {
     subdivision = sub;
   }

@@ -33,7 +33,7 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
     sectionId = songsProvider.selectedSectionId;
 
 
-    if (widget.inSong && songsProvider.selectedSectionId != ""){
+    if (widget.inSong && sectionId != ""){
       beatValue = songsProvider.getMeter(songId, sectionId)[1];
       selectedIndex = allSubdivisionsMap[beatValue]!.indexOf(songsProvider.getSubdivision(songId, sectionId));
 
@@ -58,10 +58,9 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
   }
 
   void getUpdatedMeter() {
-    songId = songsProvider.selectedSongId;
-    sectionId = songsProvider.selectedSectionId;
 
-    if (widget.inSong && songsProvider.getMeter(songId, sectionId)[1] != beatValue){
+
+    if (widget.inSong && sectionId != "" && songsProvider.getMeter(songId, sectionId)[1] != beatValue){
       beatValue = songsProvider.getMeter(songId, sectionId)[1];
       selectedIndex = allSubdivisionsMap[beatValue]!.indexOf(songsProvider.getSubdivision(songId, sectionId));
       songsProvider.updateSubdivision(songId: songId, sectionId: sectionId, sub: allSubdivisionsMap[beatValue]![selectedIndex]);

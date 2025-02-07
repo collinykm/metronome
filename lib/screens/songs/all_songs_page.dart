@@ -51,7 +51,7 @@ class _AllSongsPageState extends State<AllSongsPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final song in songsProvider.allSongs)
+                for (final song in songsProvider.allSongs())
                   Container(
                     margin: EdgeInsets.all(40),
                     padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),

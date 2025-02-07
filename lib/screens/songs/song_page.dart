@@ -1,8 +1,10 @@
 import "package:flutter/material.dart";
 import "package:metronome_app/components/popup_dialogue.dart";
+import "package:metronome_app/components/popup_input_dialogue.dart";
 import "package:metronome_app/screens/songs/section/section_popup.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
+
 
 class SongPage extends StatefulWidget {
   const SongPage({super.key});
@@ -22,19 +24,33 @@ class _SongPageState extends State<SongPage> {
 
 
 
-
-
   @override
   Widget build(BuildContext context) {
 
     String selectedSongId = Provider.of<SongsProvider>(context, listen: false).selectedSongId;
-    Song song = Provider.of<SongsProvider>(context, listen: false).allSongs.firstWhere((song) => song.songId == selectedSongId);
+    Song song = Provider.of<SongsProvider>(context, listen: false).allSongs().firstWhere((song) => song.songId == selectedSongId);
 
     return Consumer<SongsProvider>(
       builder: (context, songsProvider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: Text(song.songName),
+            title: GestureDetector(
+              child: Text(song.songName),
+              onTap: () async {
+                TextEditingController controller = TextEditingController(text: song.songName);
+
+                showInputDialogue(context: context,
+                  handleSubmit: () {
+                    songsProvider.changeSongName(songsProvider.selectedSongId, controller.text.trim());
+                    Navigator.pop(context);
+                  },
+                  title: "Rename this song",
+                  hintText: "Rename",
+                  controller: controller,
+                  confirmText: "Done",
+                );
+              },
+            ),
             actions: [
 
               //delete song button
@@ -42,8 +58,8 @@ class _SongPageState extends State<SongPage> {
                   onPressed: () async {
                     bool confirm = await showPopupDialogue(context, "Delete Song", "'${song.songName}' cannot be recovered", "Delete");
                     if (confirm) {
-                      songsProvider.removeSong(song.songId);
                       Navigator.pop(context);
+                      songsProvider.removeSong(song.songId);
                     }
                   },
                   icon: Icon(Icons.delete)

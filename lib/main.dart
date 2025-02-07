@@ -6,9 +6,13 @@ import 'package:metronome_app/screens/songs/all_songs_page.dart';
 import 'package:metronome_app/screens/tuner/tuner_page.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
 import 'package:metronome_app/service/songs_provider.dart';
+import 'package:metronome_app/service/subdivision.dart';
 import 'package:metronome_app/service/tuner_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+
+
+
 
 
 void main() async{
@@ -16,7 +20,11 @@ void main() async{
 
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationDocumentsDirectory();
-  Hive.init(dir.path);
+  await Hive.initFlutter();
+  Hive.registerAdapter(SongAdapter());
+  Hive.registerAdapter(SectionAdapter());
+  Hive.registerAdapter(SubdivisionAdapter());
+  await Hive.openBox('songsBox');
 
 
   runApp(MultiProvider(

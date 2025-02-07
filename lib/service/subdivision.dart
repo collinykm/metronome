@@ -1,15 +1,25 @@
 import "dart:core";
 import "package:uuid/uuid.dart";
 
+import 'package:hive_flutter/hive_flutter.dart';
+
+part 'subdivision.g.dart'; // This will be generated
+
+@HiveType(typeId: 2) // Unique typeId for Subdivision
 class Subdivision {
-  final String subdivisionId = Uuid().v4();
+  @HiveField(0)
+  final String subdivisionId;
+
+  @HiveField(1)
   final String imagePath;
+
+  @HiveField(2)
   final List<int> subdivisionList;
 
   Subdivision({
     required this.imagePath,
     required this.subdivisionList,
-  });
+  }) : subdivisionId = Uuid().v4();
 }
 
 
