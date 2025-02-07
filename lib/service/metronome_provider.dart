@@ -58,29 +58,30 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
     }
     _isPlaying = true;
 
-    initializePlayer();
-
     int currentPulse = 0;
     while (isPlaying) {
       int beatTime = (60 / _tempo * pow(10, 6)).toInt();
-      int pulseTime = beatTime ~/ subdivisionList[0];
-      tickInTime(currentPulse);
-      currentPulse++;
-      currentPulse = currentPulse % (meter[0] * subdivisionList[0]);
+      int pulseTime = beatTime ~/ subdivisionList[0] - 7000;   //adjust this number to suit the actual time needed to play the audio file
+      await tickInTime(currentPulse);
+      currentPulse = (currentPulse + 1) % (meter[0] * subdivisionList[0]);
       await Future.delayed(Duration(microseconds: pulseTime));
+
     }
   }
 
-  void tickInTime(int currentPulse) {
-    int currentBeat = currentPulse ~/ subdivisionList[0];
+  Future tickInTime(int currentPulse) async {
+
+    int currentBeat = (currentPulse ~/ subdivisionList[0]) % meter[0] + 1;
     int pulseInBeat = currentPulse % subdivisionList[0] + 1;
+    print("$currentBeat, $currentPulse");
     int intensity;
     if (currentPulse % subdivisionList[0] == 0) {
-      intensity = _accentsList[currentBeat] * subdivisionList[pulseInBeat];
+      intensity = _accentsList[currentBeat - 1] * subdivisionList[pulseInBeat];
+
     } else {
       intensity = subdivisionList[pulseInBeat];
     }
-
+    print(intensity);
     playSound(intensity: intensity);
     currentPulse++;
     currentPulse = currentPulse % (meter[0] * subdivisionList[0]);

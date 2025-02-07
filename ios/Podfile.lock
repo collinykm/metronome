@@ -4,11 +4,19 @@ PODS:
   - audioplayers_darwin (0.0.1):
     - Flutter
   - Flutter (1.0.0)
+  - flutter_recorder (0.0.1):
+    - Flutter
+  - flutter_sound (9.21.1):
+    - Flutter
+    - flutter_sound_core (= 9.21.1)
+  - flutter_sound_core (9.21.1)
   - just_audio (0.0.1):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - permission_handler_apple (9.3.0):
+    - Flutter
   - record_darwin (1.0.0):
     - Flutter
 
@@ -16,9 +24,16 @@ DEPENDENCIES:
   - audio_session (from `.symlinks/plugins/audio_session/ios`)
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/ios`)
   - Flutter (from `Flutter`)
+  - flutter_recorder (from `.symlinks/plugins/flutter_recorder/ios`)
+  - flutter_sound (from `.symlinks/plugins/flutter_sound/ios`)
   - just_audio (from `.symlinks/plugins/just_audio/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - record_darwin (from `.symlinks/plugins/record_darwin/ios`)
+
+SPEC REPOS:
+  trunk:
+    - flutter_sound_core
 
 EXTERNAL SOURCES:
   audio_session:
@@ -27,19 +42,29 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/audioplayers_darwin/ios"
   Flutter:
     :path: Flutter
+  flutter_recorder:
+    :path: ".symlinks/plugins/flutter_recorder/ios"
+  flutter_sound:
+    :path: ".symlinks/plugins/flutter_sound/ios"
   just_audio:
     :path: ".symlinks/plugins/just_audio/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
   record_darwin:
     :path: ".symlinks/plugins/record_darwin/ios"
 
 SPEC CHECKSUMS:
-  audio_session: 088d2483ebd1dc43f51d253d4a1c517d9a2e7207
+  audio_session: 32a33910dd5bb35d54297e4b50006481071f196b
   audioplayers_darwin: 877d9a4d06331c5c374595e46e16453ac7eafa40
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_recorder: 676cb4d0808ce2f36df061ec8fb589b8013f7eac
+  flutter_sound: 45e2f57d2bddfa2b5a2197e1fa13077130e3e6c6
+  flutter_sound_core: 8936f1d9a6f6c6022d68bde4bfb68500d6c03b76
   just_audio: baa7252489dbcf47a4c7cc9ca663e9661c99aafa
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   record_darwin: 3b1a8e7d5c0cbf45ad6165b4d83a6ca643d929c3
 
 PODFILE CHECKSUM: 819463e6a0290f5a72f145ba7cde16e8b6ef0796

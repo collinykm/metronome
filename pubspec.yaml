@@ -42,6 +42,13 @@ dependencies:
   fftea: ^1.5.0+1
   uuid: ^4.5.1
   string_validator: ^1.1.0
+  flutter_recorder: ^1.0.0
+  permission_handler: ^11.3.1
+  audio_session: ^0.1.24
+  flutter_sound: ^9.21.0
+  logger: ^2.5.0
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -67,9 +74,7 @@ flutter:
 
 
   assets:
-    - assets/tick1.wav
-    - assets/tick2.wav
-    - assets/tick3.wav
+    - assets/
     - assets/subdivision_images/2/
     - assets/subdivision_images/4/
     - assets/subdivision_images/8/

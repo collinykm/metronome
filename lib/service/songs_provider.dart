@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/subdivision.dart';
 import 'package:uuid/uuid.dart';
@@ -43,8 +44,14 @@ Song takeFive = Song(songName: "Take five", sectionsList: [
 
 class SongsProvider with ChangeNotifier, PlaySound{
 
+
+
   List<Song> _allSongs = [autumnLeaves, takeFive];
-  List<Song> get allSongs => _allSongs;
+
+  Future<List<Song>> allSongs() async {
+    final box = await Hive.openBox("AllSongs");
+    return box.get("allSongs") ?? [autumnLeaves, takeFive];
+  }
 
 
   Song getSong(String songId) {
@@ -109,7 +116,7 @@ class SongsProvider with ChangeNotifier, PlaySound{
       int currentPulse = 0;
       int totalPulses = bars * meter[0] * subdivision[0];
       int beatTime = (60 / tempo * pow(10, 6)).toInt();
-      int pulseTime = beatTime ~/ subdivision[0];
+      int pulseTime = beatTime ~/ subdivision[0] ;
 
       for (int i = 0; i < totalPulses; i++ ) {
         if (_isPlaying == false) return;
@@ -296,6 +303,9 @@ class Section{
     required this.meter,
     required this.subdivision,
   });
+
+
+
 
   void updateName(String newName){
     sectionName = newName;
