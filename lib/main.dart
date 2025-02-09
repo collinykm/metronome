@@ -1,10 +1,12 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:metronome_app/screens/metronome/metronome_page.dart';
 import 'package:metronome_app/screens/songs/all_songs_page.dart';
 import 'package:metronome_app/screens/tuner/tuner_page.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
+import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/songs_provider.dart';
 import 'package:metronome_app/service/subdivision.dart';
 import 'package:metronome_app/service/tuner_provider.dart';
@@ -25,6 +27,9 @@ void main() async{
   Hive.registerAdapter(SectionAdapter());
   Hive.registerAdapter(SubdivisionAdapter());
   await Hive.openBox('songsBox');
+
+  await SoLoud.instance.init(channels: Channels.mono, bufferSize: 512);
+
 
 
   runApp(MultiProvider(
@@ -50,6 +55,19 @@ class NavBarApp extends StatefulWidget {
 
 class _NavBarAppState extends State<NavBarApp> {
   int selectedPageIndex = 0;
+
+
+  @override
+  void initState() {
+    super.initState();
+    Provider.of<MetronomeProvider>(context, listen: false).initializePlayer();
+  }
+  @override
+  void dispose() {
+    SoLoud.instance.deinit();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

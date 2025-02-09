@@ -1,37 +1,61 @@
+import 'dart:collection';
+
 import "package:flutter/material.dart";
 import 'package:audioplayers/audioplayers.dart';
 
+
+import 'package:flutter_soloud/flutter_soloud.dart';
+
 mixin PlaySound {
-  AudioPlayer player1 = AudioPlayer();
-  AudioPlayer player2 = AudioPlayer();
-  AudioPlayer player3 = AudioPlayer();
 
-  Future initializePlayer() async {
+  AudioSource? tick1;
+  AudioSource? tick2;
+  AudioSource? tick3;
+  SoundHandle? tick1Handle;
+  SoundHandle? tick2Handle;
+  SoundHandle? tick3Handle;
 
-    await player1.setSource(AssetSource('tick1.wav'));
-    await player2.setSource(AssetSource('tick2.wav'));
-    await player3.setSource(AssetSource('tick3.wav'));
-    await player1.setReleaseMode(ReleaseMode.stop);
-    await player2.setReleaseMode(ReleaseMode.stop);
-    await player3.setReleaseMode(ReleaseMode.stop);
-    // await player1.setPlayerMode(PlayerMode.lowLatency);
-    // await player2.setPlayerMode(PlayerMode.lowLatency);
-    // await player3.setPlayerMode(PlayerMode.lowLatency);
 
+  void initializePlayer() {
+
+    SoLoud.instance.loadAsset('assets/audio/tick1-short.wav').then((value) async {
+      /// start playing the tick in a paused state, so it can be
+      /// unpaused/paused in the `Timer` callback.
+      tick1 = value;
+      tick1Handle = await SoLoud.instance.play(tick1!, paused: true);
+      await SoLoud.instance.loadAsset('assets/audio/tick2.wav').then((value) async {
+        /// start playing the tick in a paused state, so it can be
+        /// unpaused/paused in the `Timer` callback.
+        tick2 = value;
+        tick2Handle = await SoLoud.instance.play(tick2!, paused: true);
+        await SoLoud.instance.loadAsset('assets/audio/tick3.wav').then((value) async {
+          tick3 = value;
+          tick3Handle = await SoLoud.instance.play(tick3!, paused: true);
+        });
+      });
+    });
   }
 
-  void playSound({required int intensity}) async {
+
+
+  Future playSound({required int intensity}) async {
 
     if (intensity != 0) {
       switch (intensity) {
         case 1:
-          await player1.resume();
-        case 2:
-          await player2.resume();
+          final stopwatch = Stopwatch();
+          stopwatch.start();
+          await SoLoud.instance.play(tick1!);
+          stopwatch.stop();
+          print(stopwatch.elapsedMilliseconds);
 
+          break;
+        case 2:
+          SoLoud.instance.play(tick2!);
+          break;
         case 3:
-          print("GOT HERE");
-          await player3.resume();
+          SoLoud.instance.play(tick3!);
+          break;
 
       }
     }

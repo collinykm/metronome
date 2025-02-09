@@ -1,14 +1,24 @@
+import 'dart:async';
+
 import "package:flutter/material.dart";
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:math';
 
 import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/subdivision.dart';
+import 'package:reliable_interval_timer/reliable_interval_timer.dart';
+
+import 'package:quiver/async.dart';
+import 'package:quiver/time.dart';
+
+
+
+
 
 class MetronomeProvider with ChangeNotifier, PlaySound{
 
-  int _tempo = 120;
-  List<int> _accentsList = [3, 1, 2, 1];
+  int _tempo = 320;
+  List<int> _accentsList = [1, 1, 1, 1];
   Subdivision _subdivision = allSubdivisionsMap[4]![0];
 
   List<int> _meter = [4, 4];
@@ -53,20 +63,48 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
   }
 
   void Play() async {
-    if (isPlaying) {
+    if (_isPlaying) {
       return;
     }
     _isPlaying = true;
 
     int currentPulse = 0;
-    while (isPlaying) {
-      int beatTime = (60 / _tempo * pow(10, 6)).toInt();
-      int pulseTime = beatTime ~/ subdivisionList[0] - 7000;   //adjust this number to suit the actual time needed to play the audio file
-      await tickInTime(currentPulse);
+    int beatTime = (60 / _tempo * pow(10, 3)).toInt();
+    int pulseTime = beatTime ~/ subdivisionList[0];
+    print("pulse time _______------ $pulseTime");
+    Stopwatch stopwatch = Stopwatch()..start();
+    ReliableIntervalTimer(
+      interval: Duration(milliseconds: pulseTime),
+      callback: (_) {
+        stopwatch.stop();
+        print(stopwatch.elapsedMilliseconds);
+        stopwatch = Stopwatch()..start();
+
+        tickInTime(1);
+
+      }
+    ).start();
+
+    /*
+    Metronome.epoch(aMicrosecond * pulseTime).listen((_) {
+      tickInTime(currentPulse);
       currentPulse = (currentPulse + 1) % (meter[0] * subdivisionList[0]);
-      await Future.delayed(Duration(microseconds: pulseTime));
+    });
+
+    while (_isPlaying) {
+      int beatTime = (60 / _tempo * pow(10, 6)).toInt();
+      int pulseTime = beatTime ~/ subdivisionList[0];   //adjust this number to suit the actual time needed to play the audio file
+      final stopwatch = Stopwatch()..start();
+      //await tickInTime(1);
+      await Future.delayed(Duration(milliseconds: 75));
+      stopwatch.stop();
+      print(stopwatch.elapsedMicroseconds);
+      currentPulse = (currentPulse + 1) % (meter[0] * subdivisionList[0]);
+      await Future.delayed(Duration(microseconds: pulseTime - stopwatch.elapsedMicroseconds));
 
     }
+    */
+
   }
 
   Future tickInTime(int currentPulse) async {

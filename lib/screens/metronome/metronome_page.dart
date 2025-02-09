@@ -19,13 +19,10 @@ class _MetronomePageState extends State<MetronomePage> {
 
   @override
   void initState() {
-    initPlayers();
+
     super.initState();
   }
 
-  Future initPlayers() async {
-    await Provider.of<MetronomeProvider>(context, listen: false).initializePlayer();
-  }
 
   @override
   Widget build(BuildContext context) {
