@@ -69,8 +69,7 @@ class _AllSongsPageState extends State<AllSongsPage> {
                         //the play button
                         IconButton(
                           onPressed: () {
-                            songsProvider.toggleCurrentlyPlayingSongId(song.songId);
-                            songsProvider.playSong();
+                            songsProvider.playSong(song.songId);
                           },
                           icon: song.songId == songsProvider.currentlyPlayingSongId ? Icon(Icons.pause) : Icon(Icons.play_arrow),
                         ),

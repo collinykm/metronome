@@ -4,6 +4,8 @@ import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/subdivision.dart';
 import 'package:uuid/uuid.dart';
 import "dart:math";
+import 'package:flutter/services.dart';
+import 'dart:ffi';
 part 'songs_provider.g.dart';
 
 
@@ -43,7 +45,7 @@ Song takeFive = Song(songName: "Take five", sectionsList: [
 
 
 class SongsProvider with ChangeNotifier, PlaySound{
-
+  final MethodChannel platform = MethodChannel('metronome_channel');
   final Box _songsBox = Hive.box('songsBox');
 
 
@@ -91,56 +93,31 @@ class SongsProvider with ChangeNotifier, PlaySound{
   bool _isPlaying = false;
   String _currentlyPlayingSongId = "";
   String get currentlyPlayingSongId => _currentlyPlayingSongId;
-  void toggleCurrentlyPlayingSongId(String songId) {
-    if( _currentlyPlayingSongId == songId) {
+
+
+
+  void playSong(String songId) async {
+
+    if (_isPlaying) {
       _isPlaying = false;
-      _currentlyPlayingSongId = "";
-    } else {
-      _currentlyPlayingSongId = songId;
-
+      await platform.invokeMethod("pauseSong");
+      if (_currentlyPlayingSongId == songId) {
+        _currentlyPlayingSongId = "";
+        return;
+      }
     }
-    notifyListeners();
-  }
+    _currentlyPlayingSongId = songId;
 
-  void playSong() async {
-
-    if (_isPlaying || _currentlyPlayingSongId == "") {
-      return;
-    }
     _isPlaying = true;
-    initializePlayer();
+    notifyListeners();
+
     final int songIndex = _allSongs.indexWhere((song) => song.songId == _currentlyPlayingSongId);
     if (songIndex == -1) return;
     Song song = _allSongs[songIndex];
 
-    for (Section section in song.sectionsList){
-      int tempo = section.tempo;
-      int bars = section.bars;
-      List<int> accentsList = section.accentsList;
-      List<int> meter = section.meter;
-      List<int> subdivision = section.subdivision.subdivisionList;
-      int currentPulse = 0;
-      int totalPulses = bars * meter[0] * subdivision[0];
-      int beatTime = (60 / tempo * pow(10, 6)).toInt();
-      int pulseTime = beatTime ~/ subdivision[0] ;
+    await platform.invokeMethod("playSong", song.toMap());
 
-      for (int i = 0; i < totalPulses; i++ ) {
-        if (_isPlaying == false) return;
-        int currentBeat = currentPulse ~/ subdivision[0];
-        int pulseInBeat = currentPulse % subdivision[0] + 1;
-        int intensity;
-        if (currentPulse % subdivision[0] == 0) {
-          intensity = accentsList[currentBeat] * subdivision[pulseInBeat];
-        } else {
-          intensity = subdivision[pulseInBeat];
-        }
 
-        playSound(intensity: intensity);
-        currentPulse++;
-        currentPulse = currentPulse % (meter[0] * subdivision[0]);
-        await Future.delayed(Duration(microseconds: pulseTime));
-      }
-    }
 
     _isPlaying = false;
     _currentlyPlayingSongId = "";
@@ -319,6 +296,16 @@ class Song {
   void updateName(String newName) {
     songName = newName;
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      "songId": songId,
+      "songName": songName,
+      "sectionsList": sectionsList.map((s) => s.toMap()).toList()
+    };
+  }
+
+
 }
 
 
@@ -354,6 +341,17 @@ class Section {
     required this.meter,
     required this.subdivision,
   }) : sectionId = uuid.v4();
+
+  Map<String, dynamic> toMap() {
+    return {
+      "sectionName": sectionName,
+      "bars": bars,
+      "tempo": tempo,
+      "accentsList": accentsList,
+      "meter": meter,
+      "subdivision": subdivision.subdivisionList
+    };
+  }
 
   void updateName(String newName) {
     sectionName = newName;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import "package:flutter/material.dart";
 import 'package:flutter/services.dart';
@@ -68,11 +69,7 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
       return;
     }
     _isPlaying = true;
-
-
-
     await platform.invokeMethod("playMetronome");
-
 
   }
 

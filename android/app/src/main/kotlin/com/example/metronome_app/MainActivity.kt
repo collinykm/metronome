@@ -30,7 +30,28 @@ class MainActivity: FlutterActivity() {
     private var accentsList = mutableListOf(1, 1, 1, 1)
     private var meter = mutableListOf(4, 1)
     private var subdivision = mutableListOf(1, 1)
-    private var isPlaying = false
+    private var isMetronomePlaying = false
+    private var isSongPlaying = false
+
+
+
+    val sampleRate = 44100
+    val clickDurationMs = 30
+    val clickSamples = (clickDurationMs * sampleRate / 1000)
+
+    val accent3Click = generateClick(clickSamples, sampleRate, frequency = 2000.0, volume = 1.0)
+    val accent2Click = generateClick(clickSamples, sampleRate, frequency = 1600.0, volume = 0.8)
+    val normalClick = generateClick(clickSamples, sampleRate, frequency = 1000.0, volume = 0.6)
+    val silentClick = generateClick(clickSamples, sampleRate, frequency = 1000.0, volume = 0.0)
+
+    val clicksList = arrayOf(silentClick, normalClick, accent2Click, accent3Click)
+
+
+    //sets up some audio stuff
+
+
+
+
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -45,8 +66,21 @@ class MainActivity: FlutterActivity() {
                     }
                 }
                 "pauseMetronome" -> {
-                    isPlaying = false
+                isMetronomePlaying = false
                 }
+
+                "playSong" -> {
+                    metronomeScope.launch {
+                        var song = call.arguments as Map<String, Any>
+                        println("the song that was passed in :$song")
+                        playSong(song)
+                        result.success(null)
+                    }
+                }
+                "pauseSong" ->  {
+                    isSongPlaying = false
+                }
+
                 "updateTempo" -> {
                     val newTempo = call.arguments as Int
                     println("here's the new tempo: $newTempo")
@@ -71,7 +105,9 @@ class MainActivity: FlutterActivity() {
                     subdivision = newSubdivision
                     result.success(null)
                 }
-                else -> result.notImplemented()
+                else -> {
+                    result.notImplemented()
+                }
 
             }
 
@@ -86,24 +122,12 @@ class MainActivity: FlutterActivity() {
 
 
     private fun playMetronome() {
-        if (isPlaying) {
+        if (isMetronomePlaying) {
             return
         }
-        isPlaying = true
+        isMetronomePlaying = true
 
-        val sampleRate = 44100
-        val clickDurationMs = 30
-        val clickSamples = (clickDurationMs * sampleRate / 1000)
-
-
-        val accent3Click = generateClick(clickSamples, sampleRate, frequency = 2000.0, volume = 1.0)
-        val accent2Click = generateClick(clickSamples, sampleRate, frequency = 1600.0, volume = 0.8)
-        val normalClick = generateClick(clickSamples, sampleRate, frequency = 1000.0, volume = 0.6)
-        val silentClick = generateClick(clickSamples, sampleRate, frequency = 1000.0, volume = 0.0)
-
-        val clicksList = arrayOf(silentClick, normalClick, accent2Click, accent3Click)
-
-        val track = AudioTrack(
+        val metronomeTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
             sampleRate,
             AudioFormat.CHANNEL_OUT_MONO,
@@ -115,53 +139,139 @@ class MainActivity: FlutterActivity() {
             ),
             AudioTrack.MODE_STREAM
         )
-
-        track.play()
-
+        metronomeTrack.play()
 
         try {
             var currentPulse = 0
-            while (isPlaying) {
+            while (isMetronomePlaying) {
                 val beatIntervalSec = 60f / ( tempo * subdivision[0])
                 val beatIntervalSamples = (beatIntervalSec * sampleRate).toInt()
                 val silenceSamples = beatIntervalSamples - clickSamples
                 val silence = ShortArray(silenceSamples) { 0 }
 
-                var currentBeat = (currentPulse / subdivision[0]) % meter[0] + 1
-                var pulseInBeat = currentPulse % subdivision[0] + 1
+                val currentBeat = (currentPulse / subdivision[0]) % meter[0] + 1
+                val pulseInBeat = currentPulse % subdivision[0] + 1
                 lateinit var click: ShortArray
 
                 if (currentPulse % subdivision[0] == 0) {
-
-                    println("in the if statement here: ")
-                    println("accents list: $accentsList")
-                    println("subdivision list: $subdivision")
-                    println("currentBeat: $currentBeat")
-                    println("pulseInBeat: $pulseInBeat")
-                    println("_______________________\n")
-
-
-
 
                     click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
                 } else {
                     click = clicksList[subdivision[pulseInBeat]]
                 }
 
-
-
-                track.write(click, 0, click.size)
-                track.write(silence, 0, silence.size)
-                currentPulse = (currentPulse + 1) % (meter[0] * subdivision[0]);
+                metronomeTrack.write(click, 0, click.size)
+                metronomeTrack.write(silence, 0, silence.size)
+                currentPulse = (currentPulse + 1) % (meter[0] * subdivision[0])
 
             }
         } finally {
-            track.stop()
-            track.release()
+            metronomeTrack.stop()
+            metronomeTrack.release()
+        }
+
+    }
+
+/*
+
+song = {
+    "songId": songId,
+    "songName": songName,
+    "sectionsList": [
+        {
+          "sectionName": sectionName,
+          "bars": bars,
+          "tempo": tempo,
+          "accentsList": accentsList,
+          "meter": meter,
+          "subdivision": subdivision
+        }
+    ]
+
+}
+
+ */
+
+    private fun playSong(song: Map<String, Any>) {
+        if (isSongPlaying) {
+            return
+        }
+        isSongPlaying = true
+        val sectionsList = song["sectionsList"] as List<Map<String, Any>>
+
+
+        val songTrack = AudioTrack(
+            AudioManager.STREAM_MUSIC,
+            sampleRate,
+            AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            AudioTrack.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            ),
+            AudioTrack.MODE_STREAM
+        )
+        songTrack.play()
+        try {
+
+            for (section in sectionsList) {
+                val sectionTempo = section["tempo"] as Int
+                val sectionBars = section["bars"] as Int
+                val sectionAccentsList = section["accentsList"] as List<Int>
+                val sectionMeter = section["meter"] as List<Int>
+                val sectionSubdivision = section["subdivision"] as List<Int>
+
+                val beatIntervalSec = 60f / ( sectionTempo * sectionSubdivision[0])
+                val beatIntervalSamples = (beatIntervalSec * sampleRate).toInt()
+                val silenceSamples = beatIntervalSamples - clickSamples
+                val silence = ShortArray(silenceSamples) { 0 }
+                val totalPulses = sectionBars * sectionMeter[0] * sectionSubdivision[0]
+
+
+
+                var currentPulse = 0
+                for (i in 0 until totalPulses) {
+                    if (isSongPlaying == false) {return}
+                    println("is song playing: $isSongPlaying")
+                    val currentBeat = (currentPulse / sectionSubdivision[0]) % sectionMeter[0] + 1
+                    val pulseInBeat = currentPulse % sectionSubdivision[0] + 1
+
+                    lateinit var click: ShortArray
+
+                    if (currentPulse % sectionSubdivision[0] == 0) {
+
+                        click = clicksList[sectionAccentsList[currentBeat - 1] * sectionSubdivision[pulseInBeat]]
+                    } else {
+                        click = clicksList[sectionSubdivision[pulseInBeat]]
+                    }
+
+                    songTrack.write(click, 0, click.size)
+                    songTrack.write(silence, 0, silence.size)
+                    currentPulse = (currentPulse + 1) % (sectionMeter[0] * sectionSubdivision[0])
+                }
+            }
+
+        } finally {
+            songTrack.stop()
+            songTrack.release()
+            isSongPlaying = false
         }
 
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     fun generateClick(length: Int, sampleRate: Int, frequency: Double, volume: Double): ShortArray {
         val buffer = ShortArray(length)
@@ -173,9 +283,7 @@ class MainActivity: FlutterActivity() {
         return buffer
     }
 
-    private fun pauseMetronome() {
 
-    }
 
 
 }

@@ -39,6 +39,7 @@ void main() async{
       ChangeNotifierProvider(create: (_) => TunerProvider()),
     ],
     child: MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: NavBarApp()
       ),
     ),
