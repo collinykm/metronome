@@ -1,23 +1,20 @@
 import 'dart:async';
 
 import "package:flutter/material.dart";
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'dart:math';
 
 import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/subdivision.dart';
-import 'package:reliable_interval_timer/reliable_interval_timer.dart';
 
-import 'package:quiver/async.dart';
-import 'package:quiver/time.dart';
-
-
-
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'songs_provider.dart';
 
 
 class MetronomeProvider with ChangeNotifier, PlaySound{
-
-  int _tempo = 320;
+  final MethodChannel platform = MethodChannel('metronome_channel');
+  int _tempo = 120;
   List<int> _accentsList = [1, 1, 1, 1];
   Subdivision _subdivision = allSubdivisionsMap[4]![0];
 
@@ -32,10 +29,13 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
   bool get isPlaying => _isPlaying;
   double initialAngle() => (_tempo - 20)*8*pi/380;
 
+
+
   /*
   explanation on these fields: each element in accentsList represents the pitch of the click.
   subdivision list goes like this: subdivision[0] represents how many times is each beat getting divided into.
-    ex. i want triplets, them subdivision[0] is 3. if i want sixteenths, then subdivision[0] is 4
+    ex. i want triplets, them subdivision[0] is 3. if i want sixteenths, then subdivision[0] is 4;
+    the following subdivision[0] number of numbers represents if each of the divisions are silent or not. 0 means silent, 1 means play
   meter[0] represents how many beats are in each bar. meter[1] represents the value of each beat. so 4 is quarter note, 2 is half note, etc.
   */
 
@@ -60,6 +60,7 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
   void Pause() async {
     _isPlaying = false;
     notifyListeners();
+    await platform.invokeMethod("pauseMetronome");
   }
 
   void Play() async {
@@ -68,59 +69,11 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
     }
     _isPlaying = true;
 
-    int currentPulse = 0;
-    int beatTime = (60 / _tempo * pow(10, 3)).toInt();
-    int pulseTime = beatTime ~/ subdivisionList[0];
-    print("pulse time _______------ $pulseTime");
-    Stopwatch stopwatch = Stopwatch()..start();
-    ReliableIntervalTimer(
-      interval: Duration(milliseconds: pulseTime),
-      callback: (_) {
-        stopwatch.stop();
-        print(stopwatch.elapsedMilliseconds);
-        stopwatch = Stopwatch()..start();
 
-        tickInTime(1);
 
-      }
-    ).start();
+    await platform.invokeMethod("playMetronome");
 
-    /*
-    Metronome.epoch(aMicrosecond * pulseTime).listen((_) {
-      tickInTime(currentPulse);
-      currentPulse = (currentPulse + 1) % (meter[0] * subdivisionList[0]);
-    });
 
-    while (_isPlaying) {
-      int beatTime = (60 / _tempo * pow(10, 6)).toInt();
-      int pulseTime = beatTime ~/ subdivisionList[0];   //adjust this number to suit the actual time needed to play the audio file
-      final stopwatch = Stopwatch()..start();
-      //await tickInTime(1);
-      await Future.delayed(Duration(milliseconds: 75));
-      stopwatch.stop();
-      print(stopwatch.elapsedMicroseconds);
-      currentPulse = (currentPulse + 1) % (meter[0] * subdivisionList[0]);
-      await Future.delayed(Duration(microseconds: pulseTime - stopwatch.elapsedMicroseconds));
-
-    }
-    */
-
-  }
-
-  Future tickInTime(int currentPulse) async {
-
-    int currentBeat = (currentPulse ~/ subdivisionList[0]) % meter[0] + 1;
-    int pulseInBeat = currentPulse % subdivisionList[0] + 1;
-    int intensity;
-    if (currentPulse % subdivisionList[0] == 0) {
-      intensity = _accentsList[currentBeat - 1] * subdivisionList[pulseInBeat];
-
-    } else {
-      intensity = subdivisionList[pulseInBeat];
-    }
-    playSound(intensity: intensity);
-    currentPulse++;
-    currentPulse = currentPulse % (meter[0] * subdivisionList[0]);
   }
 
 
@@ -128,17 +81,20 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
 
 
 
-  void updateTempo(int tempo) {
+
+  void updateTempo(int tempo) async {
     _tempo = tempo;
     notifyListeners();
+    await platform.invokeMethod("updateTempo", tempo);
   }
 
-  void updateAccent(int beat) {
+  void updateAccent(int beat) async {
     accentsList[beat] = (accentsList[beat] + 1) % 4;
     notifyListeners();
+    await platform.invokeMethod("updateAccent", accentsList);
   }
 
-  void updateMeter(int index, int value){
+  void updateMeter(int index, int value) async {
     if (index == 0) {
       meter[0] = value;
       _accentsList = List.filled(value, 1);
@@ -146,12 +102,15 @@ class MetronomeProvider with ChangeNotifier, PlaySound{
       meter[index] = value;
     }
     notifyListeners();
+    await platform.invokeMethod("updateMeter", meter);
+    await platform.invokeMethod("updateAccent", accentsList);
 
   }
 
-  void updateSubdivision(Subdivision sub) {
+  void updateSubdivision(Subdivision sub) async {
     _subdivision = sub;
     notifyListeners();
+    await platform.invokeMethod("updateSubdivision", subdivisionList);
   }
 
 

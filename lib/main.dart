@@ -28,7 +28,7 @@ void main() async{
   Hive.registerAdapter(SubdivisionAdapter());
   await Hive.openBox('songsBox');
 
-  await SoLoud.instance.init(channels: Channels.mono, bufferSize: 512);
+
 
 
 
@@ -60,11 +60,23 @@ class _NavBarAppState extends State<NavBarApp> {
   @override
   void initState() {
     super.initState();
-    Provider.of<MetronomeProvider>(context, listen: false).initializePlayer();
+    initSoLoud();
+
   }
+
+  Future initSoLoud() async {
+    try {
+      await SoLoud.instance.init(channels: Channels.mono, bufferSize: 512);
+      await Provider.of<MetronomeProvider>(context, listen: false).initializePlayer();
+    } catch (e) {
+      debugPrint("SoLoud init error: $e");
+    }
+  }
+
   @override
   void dispose() {
     SoLoud.instance.deinit();
+    Provider.of<MetronomeProvider>(context, listen: false).disposePlayer();
     super.dispose();
   }
 

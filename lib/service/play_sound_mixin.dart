@@ -1,9 +1,3 @@
-import 'dart:collection';
-
-import "package:flutter/material.dart";
-import 'package:audioplayers/audioplayers.dart';
-
-
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 mixin PlaySound {
@@ -16,7 +10,7 @@ mixin PlaySound {
   SoundHandle? tick3Handle;
 
 
-  void initializePlayer() {
+  Future initializePlayer() async {
 
     SoLoud.instance.loadAsset('assets/audio/tick1-short.wav').then((value) async {
       /// start playing the tick in a paused state, so it can be
@@ -35,20 +29,19 @@ mixin PlaySound {
       });
     });
   }
+  void disposePlayer() {
+    SoLoud.instance.deinit();
+  }
 
 
 
-  Future playSound({required int intensity}) async {
+  void playSound({required int intensity}) async {
 
     if (intensity != 0) {
       switch (intensity) {
         case 1:
-          final stopwatch = Stopwatch();
-          stopwatch.start();
-          await SoLoud.instance.play(tick1!);
-          stopwatch.stop();
-          print(stopwatch.elapsedMilliseconds);
 
+          SoLoud.instance.play(tick1!);
           break;
         case 2:
           SoLoud.instance.play(tick2!);

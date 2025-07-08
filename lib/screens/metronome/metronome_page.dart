@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'package:metronome_app/screens/metronome/meter_selector.dart';
@@ -22,7 +23,10 @@ class _MetronomePageState extends State<MetronomePage> {
 
     super.initState();
   }
-
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
