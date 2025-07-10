@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:metronome_app/service/play_sound_mixin.dart';
 import 'package:metronome_app/service/subdivision.dart';
 import 'package:uuid/uuid.dart';
 import "dart:math";
@@ -44,7 +43,7 @@ Song takeFive = Song(songName: "Take five", sectionsList: [
 
 
 
-class SongsProvider with ChangeNotifier, PlaySound{
+class SongsProvider with ChangeNotifier{
   final MethodChannel platform = MethodChannel('metronome_channel');
   final Box _songsBox = Hive.box('songsBox');
 

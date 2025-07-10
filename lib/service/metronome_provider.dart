@@ -5,7 +5,7 @@ import "package:flutter/material.dart";
 import 'package:flutter/services.dart';
 import 'dart:math';
 
-import 'package:metronome_app/service/play_sound_mixin.dart';
+
 import 'package:metronome_app/service/subdivision.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
@@ -13,7 +13,7 @@ import 'package:uuid/uuid.dart';
 import 'songs_provider.dart';
 
 
-class MetronomeProvider with ChangeNotifier, PlaySound{
+class MetronomeProvider with ChangeNotifier{
   final MethodChannel platform = MethodChannel('metronome_channel');
   int _tempo = 120;
   List<int> _accentsList = [1, 1, 1, 1];
