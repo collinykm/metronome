@@ -33,7 +33,7 @@ import AVFoundation
 
     }
     var clicksList: [AVAudioPCMBuffer] {
-        [silentClick, normalClick, accent2Click, accent3Click]
+        return [silentClick, normalClick, accent2Click, accent3Click]
 
     }
     
@@ -43,9 +43,6 @@ import AVFoundation
     
 
 
-    
-    
-    
     
     override func application(
         _ application: UIApplication,
@@ -68,6 +65,7 @@ import AVFoundation
                     isMetronomePlaying = false
                     metronomePlayer.reset()
                     currentPulse = 0
+                    print("\n\n________________")
                     result(nil)
                 
                 case "playSong":
@@ -117,13 +115,16 @@ import AVFoundation
     
     
     
+    
+    
+    
     private func playMetronome() async {
         if isMetronomePlaying{
             return
         }
-                
+        
         isMetronomePlaying = true
-            
+        
         audioEngine.attach(metronomePlayer)
         audioEngine.connect(metronomePlayer, to: audioEngine.mainMixerNode, format: clicksList[0].format)
         try! audioEngine.start()
@@ -131,105 +132,53 @@ import AVFoundation
         
         var currentPulse = 0
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            self.startScheduling()
-        }
         
-        /*
         let nodeTime = metronomePlayer.lastRenderTime!
         let playerTime = metronomePlayer.playerTime(forNodeTime: nodeTime)!
         scheduledSampleTime = playerTime.sampleTime // small lead-in
-
+        
         scheduleBeats()
-        */
-        
-        /*
-        Task{
-            while (isMetronomePlaying) {
-                let beatIntervalSec = 60.0 / Double(tempo * subdivision[0])
-                let beatIntervalSamples = Int(beatIntervalSec * sampleRate)
-                let silenceSamples = beatIntervalSamples - clickSamples
-                let silence = generateClick(sampleCount: silenceSamples, sampleRate: sampleRate, frequency: 440.0, volume: 0.0)
-                
-                let currentBeat = (currentPulse / subdivision[0]) % meter[0] + 1
-                let pulseInBeat = currentPulse % subdivision[0] + 1
-                
-                var click: AVAudioPCMBuffer
-                
-                if (currentPulse % subdivision[0] == 0){
-                    click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
-                } else {
-                    click = clicksList[subdivision[pulseInBeat]]
-                }
-                print("processed samples: \(processedSamples), currentBeat: \(currentBeat)")
-                let now = Date().timeIntervalSince1970
-                print("Tick at: \(now)")
-                
-                
-                let startBeatTime = AVAudioTime(sampleTime: processedSamples, atRate: 44100.0)
-                let startSilentTime = AVAudioTime(sampleTime: processedSamples + AVAudioFramePosition(self.clickSamples), atRate: 44100.0)
-                metronomePlayer.scheduleBuffer(click, at: startBeatTime, completionHandler: nil)
-                metronomePlayer.scheduleBuffer(silence, at: startSilentTime, completionHandler: nil)
-                
-                try await Task.sleep(for: .seconds(beatIntervalSec-0.001), tolerance: .nanoseconds(1))
-                processedSamples += AVAudioFramePosition(beatIntervalSamples)
-
-                currentPulse = (currentPulse + 1) % (meter[0] * subdivision[0])
-            }
-                     
-        }
-         */
-        
     }
-    
-    func startScheduling() {
-        let nodeTime = self.metronomePlayer.lastRenderTime!
-        let playerTime = self.metronomePlayer.playerTime(forNodeTime: nodeTime)!
-        self.scheduledSampleTime = playerTime.sampleTime + AVAudioFramePosition(0.1 * self.sampleRate) // small lead-in
-
-
-        self.scheduleBeats()
-    }
+        
+        
     
     var scheduledSampleTime: AVAudioFramePosition = 0
     var currentPulse = 0
     
     func scheduleBeats() {
-        
         guard isMetronomePlaying else { return }
 
-        let beatIntervalSec = 60.0 / Double(tempo * subdivision[0])
+        // Capture current state to ensure consistency during this scheduling pass
+        let currentTempo = tempo
+        let currentSubdivision = subdivision[0]
+        let currentMeter = meter[0]
+        let beatIntervalSec = 60.0 / Double(currentTempo * currentSubdivision)
         let beatIntervalSamples = AVAudioFramePosition(beatIntervalSec * sampleRate)
+        let now = currentTimeInSamples()
         
-        print("Yeah got here; scheduleSampleTime: \(scheduledSampleTime), currentTimeInSamples: \(currentTimeInSamples())")
-       
-        var index = 1
-        while scheduledSampleTime < currentTimeInSamples() + AVAudioFramePosition(1 * beatIntervalSamples) {
+        // Skip any beats that should have already played
+     
         
-            let currentBeat = (currentPulse / subdivision[0]) % meter[0] + 1
-            let pulseInBeat = currentPulse % subdivision[0] + 1
-            print("currentPulse: \(currentPulse), currentBeat: \(currentBeat)")
-            
-            
-            var click: AVAudioPCMBuffer
-            if (currentPulse % subdivision[0] == 0){
-                click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
-            } else {
-                click = clicksList[subdivision[pulseInBeat]]
-            }
-            
-            let beatTime = AVAudioTime(sampleTime: scheduledSampleTime, atRate: sampleRate)
-
-            metronomePlayer.scheduleBuffer(click, at: beatTime, options: [])
-
-            scheduledSampleTime += beatIntervalSamples
-            index += 1
-            currentPulse = (currentPulse + 1) % (self.meter[0] * self.subdivision[0])
-            
+        
+        // Schedule exactly one beat ahead
+        let currentBeat = (currentPulse / currentSubdivision) % currentMeter + 1
+        let pulseInBeat = currentPulse % currentSubdivision + 1
+        
+        var click: AVAudioPCMBuffer
+        if (currentPulse % subdivision[0] == 0){
+            click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
+        } else {
+            click = clicksList[subdivision[pulseInBeat]]
         }
+        print("currentPulse: \(currentPulse), currentBeat: \(currentBeat), pulseInBeat: \(pulseInBeat), currentSubdivision: \(currentSubdivision), currentMeter: \(currentMeter)")
         
-
-        DispatchQueue.global().asyncAfter(deadline: .now() + beatIntervalSec) {
+        let beatTime = AVAudioTime(sampleTime: scheduledSampleTime, atRate: sampleRate)
+        metronomePlayer.scheduleBuffer(click, at: beatTime, options: []) { [weak self] in
+            // This completion handler runs in the audio render thread
+            guard let self = self else { return }
+            guard self.isMetronomePlaying else { return }
+            self.scheduledSampleTime += beatIntervalSamples
+            self.currentPulse = (self.currentPulse + 1) % (currentMeter * currentSubdivision)
             self.scheduleBeats()
         }
     }
@@ -267,26 +216,19 @@ import AVFoundation
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount))!
         buffer.frameLength = AVAudioFrameCount(sampleCount)
 
-        let fadeOut: (Int) -> Float = { i in
-            return 1.0 - Float(i) / Float(sampleCount)
-        }
+       
 
         let theta = 2.0 * Double.pi * frequency / sampleRate
         for i in 0..<sampleCount {
-            let amp = Float(Int16.max) * Float(volume) * fadeOut(i)
-            buffer.floatChannelData!.pointee[i] = amp * sin(Float(theta * Double(i)))
+            let fadeOut = 1.0 - Double(i) / Double(sampleCount)
+            let amp = volume * fadeOut
+            
+            buffer.floatChannelData!.pointee[i] = Float(amp * sin(2 * Double.pi * frequency * Double(i) / Double(sampleRate)))
         }
 
         return buffer
     }
-    
-    
-    
 
-    
-    
-
-    
     
     
 }
