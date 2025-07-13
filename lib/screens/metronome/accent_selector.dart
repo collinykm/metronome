@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:metronome_app/service/metronome_provider.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
@@ -16,6 +17,25 @@ class AccentSelector extends StatefulWidget {
 
 class _AccentSelectorState extends State<AccentSelector> {
 
+  late List<bool> isFlashingList;
+  final EventChannel eventChannel = EventChannel('metronome_event_channel');
+  void startEventChannelListening() {
+    eventChannel.receiveBroadcastStream().listen((beat) {
+      print("event from native side: $beat");
+      flashBeat(beat);
+
+    }, onError: (e) {
+      print(e);
+    });
+  }
+
+
+  @override
+  void initState() {
+    startEventChannelListening();
+    isFlashingList = List.filled(accentsList().length, false);
+    super.initState();
+  }
 
   List<int> accentsList() {
     if (widget.songId != null){
@@ -24,6 +44,7 @@ class _AccentSelectorState extends State<AccentSelector> {
       return Provider.of<MetronomeProvider>(context, listen: false).accentsList;
     }
   }
+
   void updateAccent(int index) {
     if (widget.songId != null) {
       Provider.of<SongsProvider>(context, listen: false).updateAccent(songId: widget.songId!, sectionId: widget.sectionId!, beat: index);
@@ -31,6 +52,25 @@ class _AccentSelectorState extends State<AccentSelector> {
       Provider.of<MetronomeProvider>(context, listen: false).updateAccent(index);
     }
   }
+
+  void flashBeat(int beat) {
+    setState(() {
+      isFlashingList[beat-1] = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 60), () {
+      if (mounted) {
+        setState(() {
+          isFlashingList[beat-1] = false;
+        });
+      }
+    });
+  }
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +89,9 @@ class _AccentSelectorState extends State<AccentSelector> {
                 width: accentSelectorWidth,
                 margin: EdgeInsets.all(10),
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isFlashingList[i] ? Colors.yellow : null,
+                  ),
                   onPressed: () {updateAccent(i);},
                   child: changeIcon(accentsList()[i]),
                 ),
@@ -64,15 +107,15 @@ class _AccentSelectorState extends State<AccentSelector> {
   Widget changeIcon(int accent) {
     switch (accent) {
       case 0:
-        return Icon(Icons.exposure_zero); // Square icon
+        return Icon(Icons.exposure_zero);
       case 1:
-        return Icon(Icons.looks_one_rounded); // Triangle icon
+        return Icon(Icons.looks_one_rounded);
       case 2:
-        return Icon(Icons.looks_two_rounded); // Circle icon
+        return Icon(Icons.looks_two_rounded);
       case 3:
-        return Icon(Icons.three_g_mobiledata); // Star icon
+        return Icon(Icons.three_g_mobiledata);
       default:
-        return Icon(Icons.error); // Fallback icon
+        return Icon(Icons.error);
     }
   }
 }

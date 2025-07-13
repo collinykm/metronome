@@ -17,17 +17,6 @@ class MetronomePage extends StatefulWidget {
 class _MetronomePageState extends State<MetronomePage> {
 
 
-
-  @override
-  void initState() {
-
-    super.initState();
-  }
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
 

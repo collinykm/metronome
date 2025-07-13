@@ -1,12 +1,7 @@
 package com.example.metronome_app
 
-import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.MethodChannel
-import android.media.AudioAttributes
-import android.media.SoundPool
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -15,13 +10,15 @@ import io.flutter.embedding.engine.FlutterEngine
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
-import androidx.activity.ComponentActivity
+import io.flutter.plugin.common.EventChannel
 import kotlinx.coroutines.*
 import kotlin.math.PI
 import kotlin.math.sin
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "metronome_channel"
+    private val METHODCHANNEL = "metronome_method_channel"
+    private val EVENTCHANNEL = "metronome_event_channel"
+    private var eventSink: EventChannel.EventSink? = null
 
     private val metronomeScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
@@ -45,28 +42,24 @@ class MainActivity: FlutterActivity() {
     val silentClick = generateClick(clickSamples, sampleRate, frequency = 1000.0, volume = 0.0)
 
     val clicksList = arrayOf(silentClick, normalClick, accent2Click, accent3Click)
-
-
     //sets up some audio stuff
-
-
-
 
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHODCHANNEL).setMethodCallHandler {
             // This method is invoked on the main thread.
                 call, result ->
             when(call.method) {
                 "playMetronome" -> {
                     metronomeScope.launch {
+
                         playMetronome()
                         result.success(null)
                     }
                 }
                 "pauseMetronome" -> {
-                isMetronomePlaying = false
+                    isMetronomePlaying = false
                 }
 
                 "playSong" -> {
@@ -112,6 +105,19 @@ class MainActivity: FlutterActivity() {
             }
 
         }
+
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENTCHANNEL).setStreamHandler(
+            object: EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    this@MainActivity.eventSink = events
+
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    this@MainActivity.eventSink = null
+                }
+            }
+        )
     }
 
 
@@ -122,6 +128,7 @@ class MainActivity: FlutterActivity() {
 
 
     private fun playMetronome() {
+        println("i got called here")
         if (isMetronomePlaying) {
             return
         }
@@ -140,35 +147,43 @@ class MainActivity: FlutterActivity() {
             AudioTrack.MODE_STREAM
         )
         metronomeTrack.play()
+        CoroutineScope(Dispatchers.Default).launch {
+            println("maybe here")
+            try {
+                var currentPulse = 0
+                while (isMetronomePlaying) {
+                    val beatIntervalSec = 60f / ( tempo * subdivision[0])
+                    val beatIntervalSamples = (beatIntervalSec * sampleRate).toInt()
+                    val silenceSamples = beatIntervalSamples - clickSamples
+                    val silence = ShortArray(silenceSamples) { 0 }
 
-        try {
-            var currentPulse = 0
-            while (isMetronomePlaying) {
-                val beatIntervalSec = 60f / ( tempo * subdivision[0])
-                val beatIntervalSamples = (beatIntervalSec * sampleRate).toInt()
-                val silenceSamples = beatIntervalSamples - clickSamples
-                val silence = ShortArray(silenceSamples) { 0 }
+                    val currentBeat = (currentPulse / subdivision[0]) % meter[0] + 1
+                    val pulseInBeat = currentPulse % subdivision[0] + 1
+                    lateinit var click: ShortArray
 
-                val currentBeat = (currentPulse / subdivision[0]) % meter[0] + 1
-                val pulseInBeat = currentPulse % subdivision[0] + 1
-                lateinit var click: ShortArray
+                    if (currentPulse % subdivision[0] == 0) {
 
-                if (currentPulse % subdivision[0] == 0) {
+                        click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
+                    } else {
+                        click = clicksList[subdivision[pulseInBeat]]
+                    }
 
-                    click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
-                } else {
-                    click = clicksList[subdivision[pulseInBeat]]
+                    withContext(Dispatchers.Main) {
+                        eventSink?.success(currentBeat);
+                    }
+                    println("has to be here")
+
+                    metronomeTrack.write(click, 0, click.size)
+                    metronomeTrack.write(silence, 0, silence.size)
+                    currentPulse = (currentPulse + 1) % (meter[0] * subdivision[0])
+
                 }
-
-                metronomeTrack.write(click, 0, click.size)
-                metronomeTrack.write(silence, 0, silence.size)
-                currentPulse = (currentPulse + 1) % (meter[0] * subdivision[0])
-
+            } finally {
+                metronomeTrack.stop()
+                metronomeTrack.release()
             }
-        } finally {
-            metronomeTrack.stop()
-            metronomeTrack.release()
         }
+
 
     }
 

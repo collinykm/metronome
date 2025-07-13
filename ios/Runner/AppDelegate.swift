@@ -4,6 +4,11 @@ import AVFoundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+    private var eventSink: FlutterEventSink?
+    private let METHODCHANNEL = "metronome_method_channel"
+    private let EVENTCHANNEL = "metronome_event_channel"
+    
+    
     
     private var tempo = 120
     private var accentsList = [1, 1, 1, 1]
@@ -43,16 +48,15 @@ import AVFoundation
     
 
 
-    
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
       
         let controller = window?.rootViewController as! FlutterViewController
-        let channel = FlutterMethodChannel(name: "metronome_channel", binaryMessenger: controller.binaryMessenger)
+        let methodChannel = FlutterMethodChannel(name: METHODCHANNEL, binaryMessenger: controller.binaryMessenger)
 
-        channel.setMethodCallHandler { [weak self] call, result in
+        methodChannel.setMethodCallHandler { [weak self] call, result in
             guard let self = self else { return }
             switch call.method {
                 case "playMetronome":
@@ -106,14 +110,13 @@ import AVFoundation
             }
         }
       
-      
+        let eventChannel = FlutterEventChannel(name: EVENTCHANNEL, binaryMessenger: controller.binaryMessenger)
+        
+        eventChannel.setStreamHandler(self)
       
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-    
-    
-    
     
     
     
@@ -173,9 +176,11 @@ import AVFoundation
         print("currentPulse: \(currentPulse), currentBeat: \(currentBeat), pulseInBeat: \(pulseInBeat), currentSubdivision: \(currentSubdivision), currentMeter: \(currentMeter)")
         
         let beatTime = AVAudioTime(sampleTime: scheduledSampleTime, atRate: sampleRate)
+        
         metronomePlayer.scheduleBuffer(click, at: beatTime, options: []) { [weak self] in
             // This completion handler runs in the audio render thread
             guard let self = self else { return }
+            eventSink?(currentBeat)
             guard self.isMetronomePlaying else { return }
             self.scheduledSampleTime += beatIntervalSamples
             self.currentPulse = (self.currentPulse + 1) % (currentMeter * currentSubdivision)
@@ -231,4 +236,17 @@ import AVFoundation
 
     
     
+}
+
+
+extension AppDelegate: FlutterStreamHandler {
+  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    self.eventSink = events
+    return nil
+  }
+
+  func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    self.eventSink = nil
+    return nil
+  }
 }

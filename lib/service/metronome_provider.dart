@@ -3,6 +3,7 @@ import 'dart:ffi';
 
 import "package:flutter/material.dart";
 import 'package:flutter/services.dart';
+import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'dart:math';
 
 
@@ -14,7 +15,8 @@ import 'songs_provider.dart';
 
 
 class MetronomeProvider with ChangeNotifier{
-  final MethodChannel platform = MethodChannel('metronome_channel');
+  final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
+
   int _tempo = 120;
   List<int> _accentsList = [1, 1, 1, 1];
   Subdivision _subdivision = allSubdivisionsMap[4]![0];
@@ -42,6 +44,9 @@ class MetronomeProvider with ChangeNotifier{
 
 
 
+
+
+
   bool _isMeterPopupVisible = false;
   bool get isMeterPopupVisible => _isMeterPopupVisible;
   void toggleMeterVisibility() {
@@ -59,17 +64,19 @@ class MetronomeProvider with ChangeNotifier{
 
 
   void Pause() async {
+
     _isPlaying = false;
     notifyListeners();
-    await platform.invokeMethod("pauseMetronome");
+    await methodChannel.invokeMethod("pauseMetronome");
   }
 
   void Play() async {
+    print("I was invoked");
     if (_isPlaying) {
       return;
     }
     _isPlaying = true;
-    await platform.invokeMethod("playMetronome");
+    await methodChannel.invokeMethod("playMetronome");
 
   }
 
@@ -82,13 +89,13 @@ class MetronomeProvider with ChangeNotifier{
   void updateTempo(int tempo) async {
     _tempo = tempo;
     notifyListeners();
-    await platform.invokeMethod("updateTempo", tempo);
+    await methodChannel.invokeMethod("updateTempo", tempo);
   }
 
   void updateAccent(int beat) async {
     accentsList[beat] = (accentsList[beat] + 1) % 4;
     notifyListeners();
-    await platform.invokeMethod("updateAccent", accentsList);
+    await methodChannel.invokeMethod("updateAccent", accentsList);
   }
 
   void updateMeter(int index, int value) async {
@@ -99,15 +106,15 @@ class MetronomeProvider with ChangeNotifier{
       meter[index] = value;
     }
     notifyListeners();
-    await platform.invokeMethod("updateMeter", meter);
-    await platform.invokeMethod("updateAccent", accentsList);
+    await methodChannel.invokeMethod("updateMeter", meter);
+    await methodChannel.invokeMethod("updateAccent", accentsList);
 
   }
 
   void updateSubdivision(Subdivision sub) async {
     _subdivision = sub;
     notifyListeners();
-    await platform.invokeMethod("updateSubdivision", subdivisionList);
+    await methodChannel.invokeMethod("updateSubdivision", subdivisionList);
   }
 
 

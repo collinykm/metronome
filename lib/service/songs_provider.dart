@@ -44,7 +44,7 @@ Song takeFive = Song(songName: "Take five", sectionsList: [
 
 
 class SongsProvider with ChangeNotifier{
-  final MethodChannel platform = MethodChannel('metronome_channel');
+  final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
   final Box _songsBox = Hive.box('songsBox');
 
 
@@ -99,7 +99,7 @@ class SongsProvider with ChangeNotifier{
 
     if (_isPlaying) {
       _isPlaying = false;
-      await platform.invokeMethod("pauseSong");
+      await methodChannel.invokeMethod("pauseSong");
       if (_currentlyPlayingSongId == songId) {
         _currentlyPlayingSongId = "";
         return;
@@ -114,7 +114,7 @@ class SongsProvider with ChangeNotifier{
     if (songIndex == -1) return;
     Song song = _allSongs[songIndex];
 
-    await platform.invokeMethod("playSong", song.toMap());
+    await methodChannel.invokeMethod("playSong", song.toMap());
 
 
 
