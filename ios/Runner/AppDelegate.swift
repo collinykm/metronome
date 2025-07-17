@@ -8,6 +8,7 @@ import AVFoundation
     private let METHODCHANNEL = "metronome_method_channel"
     private let EVENTCHANNEL = "metronome_event_channel"
     
+    var songWork: Task<Void, Never>?
     
     
     private var tempo = 120
@@ -35,85 +36,88 @@ import AVFoundation
     }
     var silentClick: AVAudioPCMBuffer {
         generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.0)
-
+        
     }
     var clicksList: [AVAudioPCMBuffer] {
         return [silentClick, normalClick, accent2Click, accent3Click]
-
+        
     }
     
     let audioEngine = AVAudioEngine()
     let metronomePlayer = AVAudioPlayerNode()
     let songPlayer = AVAudioPlayerNode()
     
-
-
+    
+    
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-      
+        
         let controller = window?.rootViewController as! FlutterViewController
         let methodChannel = FlutterMethodChannel(name: METHODCHANNEL, binaryMessenger: controller.binaryMessenger)
-
+        
         methodChannel.setMethodCallHandler { [weak self] call, result in
             guard let self = self else { return }
             switch call.method {
-                case "playMetronome":
-                    Task {
-                        await self.playMetronome()
-                    }
+            case "playMetronome":
+                Task {
+                    await self.playMetronome()
+                }
                 
-                    result(nil)
-                case "pauseMetronome":
-                    isMetronomePlaying = false
-                    metronomePlayer.reset()
-                    currentPulse = 0
-                    print("\n\n________________")
-                    result(nil)
+                result(nil)
+            case "pauseMetronome":
+                isMetronomePlaying = false
+                metronomePlayer.reset()
+                currentPulse = 0
+                print("\n\n________________")
+                result(nil)
                 
-                case "playSong":
-                    Task {
-                        var song = call.arguments as! [String: Any]
-                        await self.playSong()
-                    }
-                    result(nil)
+            case "playSong":
+                songWork = Task {
+                    var song = call.arguments as! [String: Any]
+                    print(song)
+                    await self.playSong(song: song)
+                }
+                result(nil)
                 
-                case "pauseSong":
+            case "pauseSong":
+                isSongPlaying = false
+                songPlayer.reset()
+                print("shoulda paused it here")
+                result(nil)
                 
-                    result(nil)
+            case "updateTempo":
+                let newTempo = call.arguments as! Int
+                tempo = newTempo
+                result(nil)
                 
-                case "updateTempo":
-                    let newTempo = call.arguments as! Int
-                    tempo = newTempo
-                    result(nil)
+            case "updateAccent":
+                let newAccents = call.arguments as! [Int]
+                accentsList = newAccents
+                result(nil)
                 
-                case "updateAccent":
-                    let newAccents = call.arguments as! [Int]
-                    accentsList = newAccents
-                    result(nil)
+            case "updateMeter":
+                let newMeter = call.arguments as! [Int]
+                meter = newMeter
+                result(nil)
                 
-                case "updateMeter":
-                    let newMeter = call.arguments as! [Int]
-                    meter = newMeter
-                    result(nil)
+            case "updateSubdivision":
+                let newSubdivision = call.arguments as! [Int]
+                subdivision = newSubdivision
+                result(nil)
                 
-                case "updateSubdivision":
-                    let newSubdivision = call.arguments as! [Int]
-                    subdivision = newSubdivision
-                    result(nil)
-    
-    
-        
-              default:
+                
+                
+            default:
                 result(FlutterMethodNotImplemented)
             }
         }
-      
+        
         let eventChannel = FlutterEventChannel(name: EVENTCHANNEL, binaryMessenger: controller.binaryMessenger)
         
         eventChannel.setStreamHandler(self)
-      
+        
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
@@ -125,7 +129,6 @@ import AVFoundation
         if isMetronomePlaying{
             return
         }
-        
         isMetronomePlaying = true
         
         audioEngine.attach(metronomePlayer)
@@ -133,37 +136,31 @@ import AVFoundation
         try! audioEngine.start()
         metronomePlayer.play()
         
-        var currentPulse = 0
         
         
         let nodeTime = metronomePlayer.lastRenderTime!
         let playerTime = metronomePlayer.playerTime(forNodeTime: nodeTime)!
-        scheduledSampleTime = playerTime.sampleTime // small lead-in
+        metronomeScheduledSampleTime = playerTime.sampleTime // small lead-in
         
         scheduleBeats()
     }
-        
-        
     
-    var scheduledSampleTime: AVAudioFramePosition = 0
+    
+    
+    var metronomeScheduledSampleTime: AVAudioFramePosition = 0
     var currentPulse = 0
     
     func scheduleBeats() {
         guard isMetronomePlaying else { return }
-
+        
         // Capture current state to ensure consistency during this scheduling pass
         let currentTempo = tempo
         let currentSubdivision = subdivision[0]
         let currentMeter = meter[0]
         let beatIntervalSec = 60.0 / Double(currentTempo * currentSubdivision)
         let beatIntervalSamples = AVAudioFramePosition(beatIntervalSec * sampleRate)
-        let now = currentTimeInSamples()
-        
-        // Skip any beats that should have already played
-     
         
         
-        // Schedule exactly one beat ahead
         let currentBeat = (currentPulse / currentSubdivision) % currentMeter + 1
         let pulseInBeat = currentPulse % currentSubdivision + 1
         
@@ -173,45 +170,113 @@ import AVFoundation
         } else {
             click = clicksList[subdivision[pulseInBeat]]
         }
-        print("currentPulse: \(currentPulse), currentBeat: \(currentBeat), pulseInBeat: \(pulseInBeat), currentSubdivision: \(currentSubdivision), currentMeter: \(currentMeter)")
         
-        let beatTime = AVAudioTime(sampleTime: scheduledSampleTime, atRate: sampleRate)
+        let beatTime = AVAudioTime(sampleTime: metronomeScheduledSampleTime, atRate: sampleRate)
         
         metronomePlayer.scheduleBuffer(click, at: beatTime, options: []) { [weak self] in
             // This completion handler runs in the audio render thread
             guard let self = self else { return }
-            eventSink?(currentBeat)
+            eventSink?(["type": "metronome", "beat": currentBeat])
             guard self.isMetronomePlaying else { return }
-            self.scheduledSampleTime += beatIntervalSamples
+            self.metronomeScheduledSampleTime += beatIntervalSamples
             self.currentPulse = (self.currentPulse + 1) % (currentMeter * currentSubdivision)
             self.scheduleBeats()
         }
     }
     
-    func currentTimeInSamples() -> AVAudioFramePosition {
-        guard let nodeTime = metronomePlayer.lastRenderTime,
-              let playerTime = metronomePlayer.playerTime(forNodeTime: nodeTime) else {
-            return 0
-        }
-        return playerTime.sampleTime
-    }
     
     
+    var songScheduledSampleTime: AVAudioFramePosition = 0
     
-    private func playSong() async {
-        
+    private func playSong(song: [String: Any]) async {
         if isSongPlaying{
             return
         }
-                
         isSongPlaying = true
         
-    
-            
         audioEngine.attach(songPlayer)
         audioEngine.connect(songPlayer, to: audioEngine.mainMixerNode, format: clicksList[0].format)
         try! audioEngine.start()
         songPlayer.play()
+        
+        
+        
+        let nodeTime = songPlayer.lastRenderTime!
+        let playerTime = songPlayer.playerTime(forNodeTime: nodeTime)!
+        songScheduledSampleTime = playerTime.sampleTime // small lead-in
+        
+        scheduleSongBeats(song: song)
+        
+        
+        
+        
+    }
+    
+    var currentSectionIndex = 0
+    var numSectionClicksPlayed = 0
+    var currentSectionPulse = 0
+    private func scheduleSongBeats(song: [String: Any]){
+        print(isSongPlaying)
+        if (currentSectionIndex == (song["sectionsList"] as! [[String: Any]]).count || !isSongPlaying){   //either ran out of sections to play or song ended
+    
+            currentSectionIndex = 0
+            numSectionClicksPlayed = 0
+            currentSectionPulse = 0
+            isSongPlaying = false
+            eventSink?(["type": "alert", "message": "song ended"])
+            return
+        }
+        
+        let section = (song["sectionsList"] as! [[String: Any]])[currentSectionIndex]
+        let tempo = section["tempo"] as! Int
+        let bars = section["bars"] as! Int
+        let accentsList = section["accentsList"] as! [Int]
+        let meter = section["meter"] as! [Int]
+        let subdivision = section["subdivision"] as! [Int]
+        let totalPulses = bars * meter[0] * subdivision[0]
+        
+       
+        
+        let beatIntervalSec = 60.0 / Double(tempo * subdivision[0])
+        print("beatInteralSe: \(beatIntervalSec)")
+        let beatIntervalSamples = AVAudioFramePosition(beatIntervalSec * sampleRate)
+        
+        
+        let currentBeat = (currentSectionPulse / subdivision[0]) % meter[0] + 1
+        let pulseInBeat = currentSectionPulse % subdivision[0] + 1
+        
+        var click: AVAudioPCMBuffer
+        if (currentSectionPulse % subdivision[0] == 0){
+            click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
+        } else {
+            click = clicksList[subdivision[pulseInBeat]]
+        }
+        
+        
+        let beatTime = AVAudioTime(sampleTime: songScheduledSampleTime, atRate: sampleRate)
+        
+        songPlayer.scheduleBuffer(click, at: beatTime, options: []) { [weak self] in
+            print("just played a beat, \(currentBeat)")
+            guard let self = self else { return }
+            eventSink?(["type": "song", "beat": currentBeat, "section": section["sectionId"] ])
+            numSectionClicksPlayed += 1
+            print("shoulda played a click, numSectionClicksPlayed: \(self.numSectionClicksPlayed), currentSection: \(self.currentSectionIndex), totalPulses: \(totalPulses)")
+            if numSectionClicksPlayed >= totalPulses{  //this is where the section finishes
+                print("moved on here")
+                currentSectionIndex += 1
+                numSectionClicksPlayed = 0
+                currentSectionPulse = 0
+            } else {
+                self.currentSectionPulse = (self.currentSectionPulse + 1) % (meter[0] * subdivision[0])
+            }
+            
+            self.songScheduledSampleTime += beatIntervalSamples
+
+            self.scheduleSongBeats(song: song)
+        }
+        
+        
+        
     }
     
     
@@ -221,9 +286,6 @@ import AVFoundation
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount))!
         buffer.frameLength = AVAudioFrameCount(sampleCount)
 
-       
-
-        let theta = 2.0 * Double.pi * frequency / sampleRate
         for i in 0..<sampleCount {
             let fadeOut = 1.0 - Double(i) / Double(sampleCount)
             let amp = volume * fadeOut

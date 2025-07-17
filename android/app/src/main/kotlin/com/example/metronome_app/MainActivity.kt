@@ -21,6 +21,7 @@ class MainActivity: FlutterActivity() {
     private var eventSink: EventChannel.EventSink? = null
 
     private val metronomeScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val songScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
 
     private var tempo = 120
@@ -45,7 +46,7 @@ class MainActivity: FlutterActivity() {
     //sets up some audio stuff
 
 
-    override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+    override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine)  {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHODCHANNEL).setMethodCallHandler {
             // This method is invoked on the main thread.
@@ -60,41 +61,38 @@ class MainActivity: FlutterActivity() {
                 }
                 "pauseMetronome" -> {
                     isMetronomePlaying = false
+                    result.success(null)
                 }
 
                 "playSong" -> {
-                    metronomeScope.launch {
+                    songScope.launch {
                         var song = call.arguments as Map<String, Any>
-                        println("the song that was passed in :$song")
                         playSong(song)
                         result.success(null)
                     }
                 }
                 "pauseSong" ->  {
                     isSongPlaying = false
+                    result.success(null)
                 }
 
                 "updateTempo" -> {
                     val newTempo = call.arguments as Int
-                    println("here's the new tempo: $newTempo")
                     tempo = newTempo
                     result.success(null)
                 }
                 "updateAccent" -> {
                     val newAccents = call.arguments as MutableList<Int>
-                    println("here's the new accents: $newAccents")
                     accentsList = newAccents
                     result.success(null)
                 }
                 "updateMeter" -> {
                     val newMeter = call.arguments as MutableList<Int>
-                    println("here's the new meter: $newMeter")
                     meter = newMeter
                     result.success(null)
                 }
                 "updateSubdivision" -> {
                     val newSubdivision = call.arguments as MutableList<Int>
-                    println("here's the new subdivision: $newSubdivision")
                     subdivision = newSubdivision
                     result.success(null)
                 }
@@ -128,7 +126,6 @@ class MainActivity: FlutterActivity() {
 
 
     private fun playMetronome() {
-        println("i got called here")
         if (isMetronomePlaying) {
             return
         }
@@ -148,7 +145,6 @@ class MainActivity: FlutterActivity() {
         )
         metronomeTrack.play()
         CoroutineScope(Dispatchers.Default).launch {
-            println("maybe here")
             try {
                 var currentPulse = 0
                 while (isMetronomePlaying) {
@@ -169,9 +165,8 @@ class MainActivity: FlutterActivity() {
                     }
 
                     withContext(Dispatchers.Main) {
-                        eventSink?.success(currentBeat);
+                        eventSink?.success(mapOf("type" to "metronome", "beat" to currentBeat))
                     }
-                    println("has to be here")
 
                     metronomeTrack.write(click, 0, click.size)
                     metronomeTrack.write(silence, 0, silence.size)
@@ -187,25 +182,7 @@ class MainActivity: FlutterActivity() {
 
     }
 
-/*
 
-song = {
-    "songId": songId,
-    "songName": songName,
-    "sectionsList": [
-        {
-          "sectionName": sectionName,
-          "bars": bars,
-          "tempo": tempo,
-          "accentsList": accentsList,
-          "meter": meter,
-          "subdivision": subdivision
-        }
-    ]
-
-}
-
- */
 
     private fun playSong(song: Map<String, Any>) {
         if (isSongPlaying) {
@@ -228,50 +205,62 @@ song = {
             AudioTrack.MODE_STREAM
         )
         songTrack.play()
-        try {
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                while (isSongPlaying){
+                    for (section in sectionsList) {
+                        if (!isSongPlaying){break}
+                        val sectionTempo = section["tempo"] as Int
+                        val sectionBars = section["bars"] as Int
+                        val sectionAccentsList = section["accentsList"] as List<Int>
+                        val sectionMeter = section["meter"] as List<Int>
+                        val sectionSubdivision = section["subdivision"] as List<Int>
 
-            for (section in sectionsList) {
-                val sectionTempo = section["tempo"] as Int
-                val sectionBars = section["bars"] as Int
-                val sectionAccentsList = section["accentsList"] as List<Int>
-                val sectionMeter = section["meter"] as List<Int>
-                val sectionSubdivision = section["subdivision"] as List<Int>
-
-                val beatIntervalSec = 60f / ( sectionTempo * sectionSubdivision[0])
-                val beatIntervalSamples = (beatIntervalSec * sampleRate).toInt()
-                val silenceSamples = beatIntervalSamples - clickSamples
-                val silence = ShortArray(silenceSamples) { 0 }
-                val totalPulses = sectionBars * sectionMeter[0] * sectionSubdivision[0]
+                        val beatIntervalSec = 60f / ( sectionTempo * sectionSubdivision[0])
+                        val beatIntervalSamples = (beatIntervalSec * sampleRate).toInt()
+                        val silenceSamples = beatIntervalSamples - clickSamples
+                        val silence = ShortArray(silenceSamples) { 0 }
+                        val totalPulses = sectionBars * sectionMeter[0] * sectionSubdivision[0]
 
 
 
-                var currentPulse = 0
-                for (i in 0 until totalPulses) {
-                    if (isSongPlaying == false) {return}
-                    println("is song playing: $isSongPlaying")
-                    val currentBeat = (currentPulse / sectionSubdivision[0]) % sectionMeter[0] + 1
-                    val pulseInBeat = currentPulse % sectionSubdivision[0] + 1
+                        var currentPulse = 0
+                        for (i in 0 until totalPulses) {
+                            if (!isSongPlaying){break}
+                            val currentBeat = (currentPulse / sectionSubdivision[0]) % sectionMeter[0] + 1
+                            val pulseInBeat = currentPulse % sectionSubdivision[0] + 1
 
-                    lateinit var click: ShortArray
+                            lateinit var click: ShortArray
 
-                    if (currentPulse % sectionSubdivision[0] == 0) {
+                            if (currentPulse % sectionSubdivision[0] == 0) {
 
-                        click = clicksList[sectionAccentsList[currentBeat - 1] * sectionSubdivision[pulseInBeat]]
-                    } else {
-                        click = clicksList[sectionSubdivision[pulseInBeat]]
+                                click = clicksList[sectionAccentsList[currentBeat - 1] * sectionSubdivision[pulseInBeat]]
+                            } else {
+                                click = clicksList[sectionSubdivision[pulseInBeat]]
+                            }
+                            withContext(Dispatchers.Main) {
+                                eventSink?.success(mapOf("type" to "song", "beat" to currentBeat, "section" to section["sectionId"]))
+                            }
+                            songTrack.write(click, 0, click.size)
+                            songTrack.write(silence, 0, silence.size)
+                            currentPulse = (currentPulse + 1) % (sectionMeter[0] * sectionSubdivision[0])
+                        }
+
+                    }
+                    isSongPlaying = false
+                    withContext(Dispatchers.Main) {
+                        eventSink?.success(mapOf("type" to "alert", "message" to "song ended"))
                     }
 
-                    songTrack.write(click, 0, click.size)
-                    songTrack.write(silence, 0, silence.size)
-                    currentPulse = (currentPulse + 1) % (sectionMeter[0] * sectionSubdivision[0])
                 }
-            }
 
-        } finally {
-            songTrack.stop()
-            songTrack.release()
-            isSongPlaying = false
+            } finally {
+                songTrack.stop()
+                songTrack.release()
+                isSongPlaying = false
+            }
         }
+
 
 
     }

@@ -98,12 +98,14 @@ class SongsProvider with ChangeNotifier{
   void playSong(String songId) async {
 
     if (_isPlaying) {
+      print("uhhh");
       _isPlaying = false;
       await methodChannel.invokeMethod("pauseSong");
-      if (_currentlyPlayingSongId == songId) {
-        _currentlyPlayingSongId = "";
-        return;
-      }
+
+      _currentlyPlayingSongId = "";
+      notifyListeners();
+      return;
+
     }
     _currentlyPlayingSongId = songId;
 
@@ -113,17 +115,30 @@ class SongsProvider with ChangeNotifier{
     final int songIndex = _allSongs.indexWhere((song) => song.songId == _currentlyPlayingSongId);
     if (songIndex == -1) return;
     Song song = _allSongs[songIndex];
-
+    print("got here");
+    startEventChannelListening();
     await methodChannel.invokeMethod("playSong", song.toMap());
 
-
-
-    _isPlaying = false;
-    _currentlyPlayingSongId = "";
-    notifyListeners();
-
-
   }
+
+  final EventChannel eventChannel = EventChannel('metronome_event_channel');
+  void startEventChannelListening() {
+    eventChannel.receiveBroadcastStream().listen((event) {
+      if (event["type"] == "alert"){
+        if (event["message"] == "song ended") {
+          print("song ended");
+          _isPlaying = false;
+          _currentlyPlayingSongId = "";
+          notifyListeners();
+        }
+      }
+
+
+    }, onError: (e) {
+      print(e);
+    });
+  }
+
 
 
   //Things to do with displaying the different pages for songs and popups for sections

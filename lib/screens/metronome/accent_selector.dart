@@ -20,9 +20,11 @@ class _AccentSelectorState extends State<AccentSelector> {
   late List<bool> isFlashingList;
   final EventChannel eventChannel = EventChannel('metronome_event_channel');
   void startEventChannelListening() {
-    eventChannel.receiveBroadcastStream().listen((beat) {
-      print("event from native side: $beat");
-      flashBeat(beat);
+    eventChannel.receiveBroadcastStream().listen((event) {
+      if (event["type"] == "metronome"){
+        flashBeat(event["beat"]);
+      }
+
 
     }, onError: (e) {
       print(e);
