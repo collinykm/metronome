@@ -46,7 +46,7 @@ class MetronomeProvider with ChangeNotifier{
 
 
 
-
+  //meter and subdivision popup bools
   bool _isMeterPopupVisible = false;
   bool get isMeterPopupVisible => _isMeterPopupVisible;
   void toggleMeterVisibility() {
@@ -62,30 +62,53 @@ class MetronomeProvider with ChangeNotifier{
   }
 
 
+  //play pause
 
   void Pause() async {
-
     _isPlaying = false;
     notifyListeners();
     await methodChannel.invokeMethod("pauseMetronome");
   }
 
   void Play() async {
-    print("I was invoked");
+    startEventChannelListening();
     if (_isPlaying) {
       return;
     }
     _isPlaying = true;
     await methodChannel.invokeMethod("playMetronome");
+  }
 
+
+  List<bool> currentBeepingMetronomeList = List.filled(4, false);
+  //TODO: note that the length is hard coded, so if default meter was changed we're screwed
+
+  final EventChannel eventChannel = EventChannel('metronome_event_channel');
+  void startEventChannelListening() {
+    eventChannel.receiveBroadcastStream().listen((event) {
+      if (event["type"] == "metronome"){
+        flashBeat(event["beat"]);
+      }
+
+    }, onError: (e) {
+      print(e);
+    });
+  }
+
+  void flashBeat(int beat) {
+
+    currentBeepingMetronomeList[beat-1] = true;
+    notifyListeners();
+
+    Future.delayed(const Duration(milliseconds: 60), () {
+      currentBeepingMetronomeList[beat-1] = false;
+       notifyListeners();
+    });
   }
 
 
 
-
-
-
-
+  //updating playing related parameters
   void updateTempo(int tempo) async {
     _tempo = tempo;
     notifyListeners();
@@ -99,9 +122,11 @@ class MetronomeProvider with ChangeNotifier{
   }
 
   void updateMeter(int index, int value) async {
+    //index just tells u which part of the meter was changed. index == 0 means u changed the number of beats in a bar, index == 1 means changed value of beat
     if (index == 0) {
       meter[0] = value;
       _accentsList = List.filled(value, 1);
+      currentBeepingMetronomeList = List.filled(value, false);
     } else {
       meter[index] = value;
     }
@@ -116,7 +141,6 @@ class MetronomeProvider with ChangeNotifier{
     notifyListeners();
     await methodChannel.invokeMethod("updateSubdivision", subdivisionList);
   }
-
 
 
 

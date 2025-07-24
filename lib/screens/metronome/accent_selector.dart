@@ -17,27 +17,9 @@ class AccentSelector extends StatefulWidget {
 
 class _AccentSelectorState extends State<AccentSelector> {
 
-  late List<bool> isFlashingList;
-  final EventChannel eventChannel = EventChannel('metronome_event_channel');
-  void startEventChannelListening() {
-    eventChannel.receiveBroadcastStream().listen((event) {
-      if (event["type"] == "metronome"){
-        flashBeat(event["beat"]);
-      }
 
 
-    }, onError: (e) {
-      print(e);
-    });
-  }
 
-
-  @override
-  void initState() {
-    startEventChannelListening();
-    isFlashingList = List.filled(accentsList().length, false);
-    super.initState();
-  }
 
   List<int> accentsList() {
     if (widget.songId != null){
@@ -55,19 +37,7 @@ class _AccentSelectorState extends State<AccentSelector> {
     }
   }
 
-  void flashBeat(int beat) {
-    setState(() {
-      isFlashingList[beat-1] = true;
-    });
 
-    Future.delayed(const Duration(milliseconds: 60), () {
-      if (mounted) {
-        setState(() {
-          isFlashingList[beat-1] = false;
-        });
-      }
-    });
-  }
 
 
 
@@ -92,7 +62,7 @@ class _AccentSelectorState extends State<AccentSelector> {
                 margin: EdgeInsets.all(10),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isFlashingList[i] ? Colors.yellow : null,
+                    backgroundColor: metronome.currentBeepingMetronomeList[i] ? Colors.yellow : null,
                   ),
                   onPressed: () {updateAccent(i);},
                   child: changeIcon(accentsList()[i]),

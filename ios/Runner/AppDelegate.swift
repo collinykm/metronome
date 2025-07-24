@@ -252,6 +252,7 @@ import AVFoundation
             click = clicksList[subdivision[pulseInBeat]]
         }
         
+
         
         let beatTime = AVAudioTime(sampleTime: songScheduledSampleTime, atRate: sampleRate)
         
