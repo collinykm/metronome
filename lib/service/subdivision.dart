@@ -24,7 +24,7 @@ class Subdivision {
 
 
 Map<int, List<Subdivision>> allSubdivisionsMap = {
-  2 : [
+  2 : [   //each beat is worth a half note
     Subdivision(imagePath: "$two/h.png", subdivisionList: [1, 1]),
     Subdivision(imagePath: "$two/q_q.png", subdivisionList: [2, 1, 1]),
     Subdivision(imagePath: "$two/qr_q.png", subdivisionList: [2, 0, 1]),
@@ -39,7 +39,7 @@ Map<int, List<Subdivision>> allSubdivisionsMap = {
     Subdivision(imagePath: "$two/e_q_e.png", subdivisionList: [4, 1, 1, 0, 1]),
     Subdivision(imagePath: "$two/dq_e.png", subdivisionList: [4, 1, 0, 0, 1]),
   ],
-  4: [
+  4: [    //each beat is worth a quarter
     Subdivision(imagePath: "$four/q.png", subdivisionList: [1, 1]),
     Subdivision(imagePath: "$four/e_e.png", subdivisionList: [2, 1, 1]),
     Subdivision(imagePath: "$four/er_e.png", subdivisionList: [2, 0, 1]),

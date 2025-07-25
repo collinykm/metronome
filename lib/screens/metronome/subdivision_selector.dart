@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/components/subdivision_selector_ui.dart";
 import "package:metronome_app/service/metronome_provider.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:metronome_app/service/subdivision.dart";
@@ -59,7 +60,7 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
 
   void getUpdatedMeter() {
 
-
+    //uhh if a song has been selected and the current beat value is not what it thinks it is, it'll update the beat value,
     if (widget.inSong && sectionId != "" && songsProvider.getMeter(songId, sectionId)[1] != beatValue){
       beatValue = songsProvider.getMeter(songId, sectionId)[1];
       selectedIndex = allSubdivisionsMap[beatValue]!.indexOf(songsProvider.getSubdivision(songId, sectionId));
@@ -103,53 +104,19 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
     }
   }
 
+
+  handleSelectedItemChanged(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+    Subdivision selected = subdivisionsList[index];
+    updateSubdivision(selected);
+  }
+
+
   Widget build(BuildContext context) {
 
-    return AnimatedPositioned(
-        duration: Duration(milliseconds: 200),
-        left: isSubdivisionPopupVisible() ? 0 : -150,
-        top: 200,
-        child: Container(
-          width: 150,
-          height: 300,
-          color: Colors.white,
-          child: Row(
-            children: [
-              //select number of beats
-              Container(
-                height: 200,
-                width: 50,
-                child: ListWheelScrollView(
-                  itemExtent: 50, // Height of each item
-                  diameterRatio: 1.5, // Adjust the size of the wheel
-                  physics: FixedExtentScrollPhysics(),
-                  controller: FixedExtentScrollController(initialItem: selectedIndex),
-                  onSelectedItemChanged: (index) {
-                    Subdivision selected = subdivisionsList[index];
-                    updateSubdivision(selected);
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-
-                  children:[
-                    for (Subdivision sub in subdivisionsList)
-                      SizedBox(
-                        height: 30,
-                        width: 50,
-                        child: Image.asset(sub.imagePath),
-                      )
-                  ],
-                ),
-              ),
-
-
-              IconButton(onPressed: toggleVisibility, icon: Icon(Icons.close))
-
-            ],
-          ),
-        )
-    );
+    return SubdivisionSelectorUI(selectedIndex: selectedIndex, subdivisionsList: subdivisionsList, isSubdivisionPopupVisible: isSubdivisionPopupVisible(), handleSelectedItemChanged: handleSelectedItemChanged, toggleVisibility: toggleVisibility);
 
 
 
