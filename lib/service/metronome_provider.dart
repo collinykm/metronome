@@ -1,17 +1,12 @@
 import 'dart:async';
-import 'dart:ffi';
+
 
 import "package:flutter/material.dart";
 import 'package:flutter/services.dart';
-import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'dart:math';
-
 
 import 'package:metronome_app/service/subdivision.dart';
 
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:uuid/uuid.dart';
-import 'songs_provider.dart';
 
 
 class MetronomeProvider with ChangeNotifier{
@@ -128,7 +123,12 @@ class MetronomeProvider with ChangeNotifier{
       _accentsList = List.filled(value, 1);
       currentBeepingMetronomeList = List.filled(value, false);
     } else {
+      //updating the subdivisions whenever the beat value changes to their corresponding one in the new beat value
+      int currentlySelectedIndex = allSubdivisionsMap[meter[1]]!.indexOf(subdivision);
+      updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex]);
+
       meter[index] = value;
+
     }
     notifyListeners();
     await methodChannel.invokeMethod("updateMeter", meter);

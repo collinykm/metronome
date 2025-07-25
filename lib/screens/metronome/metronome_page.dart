@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:metronome_app/screens/metronome/accent_selector.dart';
 import 'package:metronome_app/screens/metronome/meter_selector.dart';
-import 'package:metronome_app/screens/metronome/subdivision_selector.dart';
+import 'package:metronome_app/screens/metronome/metronome_subdivision_selector_logic.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
@@ -92,7 +92,7 @@ class _MetronomePageState extends State<MetronomePage> {
                   ),
 
                 MeterSelector(inSong: false,),
-                SubdivisionSelector(inSong: false,)
+                SubdivisionSelector()
               ],
             ),
           );
