@@ -2,7 +2,6 @@ import "package:flutter/material.dart";
 
 import "package:metronome_app/components/subdivision_selector_ui.dart";
 import "package:metronome_app/service/metronome_provider.dart";
-import "package:metronome_app/service/songs_provider.dart";
 import "package:metronome_app/service/subdivision.dart";
 import "package:provider/provider.dart";
 

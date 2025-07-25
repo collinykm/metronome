@@ -201,6 +201,7 @@ class SongsProvider with ChangeNotifier{
 
   void addSong(String songName) async {
     _allSongs.add(Song(songName: songName));
+    addSectionToSong(_allSongs.last.songId);
     setSelectedSongId(_allSongs.last.songId);
 
     await _songsBox.put('songs', _allSongs);
@@ -384,6 +385,10 @@ class Section {
   }
 
   void updateMeter(int index, int value) {
+    int currentlySelectedIndex = allSubdivisionsMap[meter[1]]!.indexOf(subdivision);
+    updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex]);
+
+
     meter[index] = value;
   }
 

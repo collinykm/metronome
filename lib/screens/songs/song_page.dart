@@ -52,7 +52,12 @@ class _SongPageState extends State<SongPage> {
               },
             ),
             actions: [
-
+              IconButton(
+                onPressed: () {
+                  songsProvider.playSong(song.songId);
+                },
+                icon: song.songId == songsProvider.currentlyPlayingSongId ? Icon(Icons.pause) : Icon(Icons.play_arrow),
+              ),
               //delete song button
               IconButton(
                   onPressed: () async {

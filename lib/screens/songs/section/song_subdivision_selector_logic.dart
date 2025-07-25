@@ -2,7 +2,6 @@ import "package:flutter/material.dart";
 
 
 import "package:metronome_app/components/subdivision_selector_ui.dart";
-import "package:metronome_app/service/metronome_provider.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:metronome_app/service/subdivision.dart";
 import "package:provider/provider.dart";
@@ -18,39 +17,55 @@ class SubdivisionSelector extends StatefulWidget {
 
 class _SubdivisionSelectorState extends State<SubdivisionSelector> {
 
-  late MetronomeProvider metronomeProvider;
-  int get beatValue {
-    return metronomeProvider.meter[1];
+
+  late SongsProvider songsProvider;
+
+  String get songId {
+    return songsProvider.selectedSongId;
   }
+  String get sectionId {
+    return songsProvider.selectedSectionId;
+  }
+
+
+  int get beatValue {
+    return songsProvider.getMeter(songId, sectionId)[1];
+  }
+
+
+
   List<Subdivision> get subdivisionsList{
     return allSubdivisionsMap[beatValue]!;
   }
   int get selectedIndex {
-    return allSubdivisionsMap[beatValue]!.indexOf(metronomeProvider.subdivision);
+    return allSubdivisionsMap[beatValue]!.indexOf(songsProvider.getSubdivision(songId, sectionId));
   }
 
 
   @override
   void initState() {
-    metronomeProvider = Provider.of<MetronomeProvider>(context, listen: false);
+    songsProvider = Provider.of<SongsProvider>(context, listen: false);
     super.initState();
   }
 
   void updateSubdivision(Subdivision selected) {
-    metronomeProvider.updateSubdivision(selected);
+
+    songsProvider.updateSubdivision(songId: songId, sectionId: sectionId, sub: selected);
+
   }
 
   bool isSubdivisionPopupVisible() {
-    return metronomeProvider.isSubdivisionPopupVisible;
+    return songsProvider.isSubdivisionPopupVisible;
   }
+
 
   void toggleVisibility() {
-    return metronomeProvider.toggleSubdivisionVisibility();
+    return songsProvider.toggleSubdivisionPopup();
   }
 
-  handleSelectedItemChanged(int index) {
-    Subdivision selected = subdivisionsList[index];
-    updateSubdivision(selected);
+
+  void handleSelectedItemChanged(int index) {
+    songsProvider.updateSubdivision(songId: songId, sectionId: sectionId, sub: subdivisionsList[index]);
   }
 
   @override

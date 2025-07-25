@@ -79,6 +79,7 @@ class _AllSongsPageState extends State<AllSongsPage> {
                         IconButton(
                           onPressed: (){
                             songsProvider.setSelectedSongId(song.songId);
+                            songsProvider.setSelectedSectionId(song.sectionsList[0].sectionId);
                             Navigator.of(context).push(
                                 MaterialPageRoute(builder: (context) => SongPage())
                             );
