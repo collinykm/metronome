@@ -209,6 +209,9 @@ class SongsProvider with ChangeNotifier{
   }
 
   void removeSong(String id) {
+    if (_isPlaying) {
+      playSong(id);
+    }
     _allSongs.removeWhere((song) => song.songId == id);
     _selectedSongId = "";
     _selectedSectionId = "";
