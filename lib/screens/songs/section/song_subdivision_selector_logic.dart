@@ -28,20 +28,6 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
   }
 
 
-  int get beatValue {
-    return songsProvider.getMeter(songId, sectionId)[1];
-  }
-
-
-
-  List<Subdivision> get subdivisionsList{
-    return allSubdivisionsMap[beatValue]!;
-  }
-  int get selectedIndex {
-    return allSubdivisionsMap[beatValue]!.indexOf(songsProvider.getSubdivision(songId, sectionId));
-  }
-
-
   @override
   void initState() {
     songsProvider = Provider.of<SongsProvider>(context, listen: false);
@@ -65,13 +51,30 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
 
 
   void handleSelectedItemChanged(int index) {
-    songsProvider.updateSubdivision(songId: songId, sectionId: sectionId, sub: subdivisionsList[index]);
+    if (songId.isEmpty || sectionId.isEmpty) return;
+    final currentBeatValue = songsProvider.getMeter(songId, sectionId)[1];
+    final subs = allSubdivisionsMap[currentBeatValue]!;
+    songsProvider.updateSubdivision(songId: songId, sectionId: sectionId, sub: subs[index]);
   }
 
   @override
   Widget build(BuildContext context) {
 
-    return SubdivisionSelectorUI(selectedIndex: selectedIndex, subdivisionsList: subdivisionsList, isSubdivisionPopupVisible: isSubdivisionPopupVisible(), handleSelectedItemChanged: handleSelectedItemChanged, toggleVisibility: toggleVisibility);
+    if (songId.isEmpty || sectionId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final currentBeatValue = songsProvider.getMeter(songId, sectionId)[1];
+    final subs = allSubdivisionsMap[currentBeatValue]!;
+    final index = subs.indexOf(songsProvider.getSubdivision(songId, sectionId));
+
+    return SubdivisionSelectorUI(
+      selectedIndex: index,
+      subdivisionsList: subs,
+      isSubdivisionPopupVisible: isSubdivisionPopupVisible(),
+      handleSelectedItemChanged: handleSelectedItemChanged,
+      toggleVisibility: toggleVisibility,
+    );
 
   }
 }
