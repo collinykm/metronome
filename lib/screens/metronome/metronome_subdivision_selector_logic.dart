@@ -46,7 +46,7 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
     return metronomeProvider.toggleSubdivisionVisibility();
   }
 
-  handleSelectedItemChanged(int index) {
+  void handleSelectedItemChanged(int index) {
     Subdivision selected = subdivisionsList[index];
     updateSubdivision(selected);
   }
@@ -54,7 +54,13 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
   @override
   Widget build(BuildContext context) {
 
-    return SubdivisionSelectorUI(selectedIndex: selectedIndex, subdivisionsList: subdivisionsList, isSubdivisionPopupVisible: isSubdivisionPopupVisible(), handleSelectedItemChanged: handleSelectedItemChanged, toggleVisibility: toggleVisibility);
+    return SubdivisionSelectorUI(
+      selectedIndex: selectedIndex,
+      subdivisionsList: subdivisionsList,
+      isSubdivisionPopupVisible: isSubdivisionPopupVisible(),
+      handleSelectedItemChanged: handleSelectedItemChanged,
+      toggleVisibility: toggleVisibility
+    );
 
   }
 }
