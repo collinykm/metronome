@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 import "package:metronome_app/components/popup_input_dialogue.dart";
-import "package:metronome_app/screens/metronome/accent_selector.dart";
+import "package:metronome_app/screens/songs/section/song_accent_selector_logic.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 import 'package:string_validator/string_validator.dart';
@@ -138,8 +138,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                 ElevatedButton(onPressed: songsProvider.toggleMeterPopup,
                   child: Text("Meter: ${section.meter.toString()}"),),
 
-                AccentSelector(songId: songsProvider.selectedSongId,
-                  sectionId: songsProvider.selectedSectionId,),
+                AccentSelector(),
 
               ],
             ),

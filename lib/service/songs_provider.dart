@@ -383,12 +383,15 @@ class Section {
     tempo = newTempo;
   }
 
-  void updateAccentsList(int beat) {
-    accentsList[beat] = (accentsList[beat] + 1) % 4;
+  void updateAccentsList(int beatIndex) {
+    accentsList[beatIndex] = (accentsList[beatIndex] + 1) % 4;
   }
 
   void updateMeter(int index, int value) {
-    if (index == 1){
+    if (index == 0) {
+      accentsList = List.filled(value, 1);
+    }
+    else if (index == 1){
       int currentlySelectedIndex = allSubdivisionsMap[meter[1]]!.indexOf(subdivision);
       updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex]);
     }
