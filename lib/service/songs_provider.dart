@@ -388,10 +388,10 @@ class Section {
   }
 
   void updateMeter(int index, int value) {
-    int currentlySelectedIndex = allSubdivisionsMap[meter[1]]!.indexOf(subdivision);
-    updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex]);
-
-
+    if (index == 1){
+      int currentlySelectedIndex = allSubdivisionsMap[meter[1]]!.indexOf(subdivision);
+      updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex]);
+    }
     meter[index] = value;
   }
 
