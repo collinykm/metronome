@@ -6,10 +6,7 @@ import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
 class AccentSelector extends StatefulWidget {
-  const AccentSelector({this.songId, this.sectionId, super.key});
-
-  final String? songId;
-  final String? sectionId;
+  const AccentSelector({super.key});
 
 
   @override
@@ -36,7 +33,7 @@ class _AccentSelectorState extends State<AccentSelector> {
   }
 
   void updateAccent(int index) {
-    Provider.of<MetronomeProvider>(context, listen: false).updateAccent(index);
+    metronomeProvider.updateAccent(index);
   }
 
 
