@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:metronome_app/screens/metronome/accent_selector.dart';
+import 'package:metronome_app/screens/metronome/metronome_accent_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_meter_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_subdivision_selector_logic.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
