@@ -5,6 +5,8 @@ import "package:metronome_app/screens/songs/song_page.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
+import "../../theme/typography.dart";
+
 class AllSongsPage extends StatefulWidget {
   const AllSongsPage({super.key});
 
@@ -19,7 +21,7 @@ class _AllSongsPageState extends State<AllSongsPage> {
       builder: (context, songsProvider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: Text("Custom Songs"),
+            title: BodyText("Custom Songs"),
 
           ),
 
@@ -64,7 +66,7 @@ class _AllSongsPageState extends State<AllSongsPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(song.songName),
+                        BodyText(song.songName),
 
                         //the play button
                         IconButton(

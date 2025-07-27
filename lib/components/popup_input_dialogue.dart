@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 
+import "../theme/typography.dart";
+
 Future showInputDialogue({
   required BuildContext context,
   required Function() handleSubmit,
@@ -15,7 +17,7 @@ Future showInputDialogue({
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(title),
+          title: BodyText(title),
           content: TextFormField(
 
             keyboardType: type,
@@ -27,12 +29,12 @@ Future showInputDialogue({
           actions: [
             //cancel button
             ElevatedButton(
-                onPressed: () {Navigator.pop(context);}, child: Text("Cancel")
+                onPressed: () {Navigator.pop(context);}, child: BodyText("Cancel")
             ),
             //Create button
             ElevatedButton(
               onPressed: handleSubmit,
-              child: Text(confirmText),
+              child: BodyText(confirmText),
             ),
           ],
         );

@@ -7,6 +7,8 @@ import 'package:metronome_app/service/metronome_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
 
+import '../../theme/typography.dart';
+
 class MetronomePage extends StatefulWidget {
   const MetronomePage({super.key});
 
@@ -37,7 +39,7 @@ class _MetronomePageState extends State<MetronomePage> {
                     //meter button
                     ElevatedButton(
                       onPressed: metronome.toggleMeterVisibility,
-                      child: Text("${metronome.meter[0]} / ${metronome.meter[1]}"),
+                      child: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}"),
                     ),
 
                     //subdivision button
@@ -48,18 +50,18 @@ class _MetronomePageState extends State<MetronomePage> {
                     
                     const SizedBox(height: 30,),
                     TempoKnob(),
-                    Text(metronome.tempo.toString()),
+                    BodyText(metronome.tempo.toString()),
 
                     //Play button
                     TextButton(onPressed: () {
                       Provider.of<MetronomeProvider>(context, listen: false).Play();
-                    }, child: Text("PLAY")),
+                    }, child: BodyText("PLAY")),
 
                     //Pause button
                     TextButton(
                       onPressed: () {
                         Provider.of<MetronomeProvider>(context, listen: false).Pause();
-                      }, child: Text("PAUSE")
+                      }, child: BodyText("PAUSE")
                     ),
 
 

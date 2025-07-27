@@ -5,6 +5,8 @@ import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 import 'package:string_validator/string_validator.dart';
 
+import "../../../theme/typography.dart";
+
 class SectionPopupContent extends StatefulWidget {
   const SectionPopupContent({super.key});
 
@@ -21,7 +23,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
 
       builder: (context, songsProvider, child) {
         if (songsProvider.selectedSectionId == "")
-          return Text("No Section selected right now");
+          return BodyText("No Section selected right now");
 
         Section section = songsProvider.
         allSongs().firstWhere((song) =>
@@ -53,7 +55,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                     );
 
                   },
-                  child: Text(section.sectionName),
+                  child: BodyText(section.sectionName),
                 ),
                 //tempo selector
                 TextButton(
@@ -72,7 +74,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                               value: tempo);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: const Text(
+                            content: const BodyText(
                                 "Input can only contain numbers"),
                             showCloseIcon: true,
                             duration: const Duration(seconds: 2),
@@ -90,7 +92,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                       type: TextInputType.number,
                     );
                   },
-                  child: Text("Tempo: ${section.tempo.toString()}")
+                  child: BodyText("Tempo: ${section.tempo.toString()}")
                 ),
                 //bars selector
                 TextButton(
@@ -109,7 +111,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: const Text(
+                            content: const BodyText(
                                 "Input can only contain numbers"),
                             showCloseIcon: true,
                             duration: const Duration(seconds: 2),
@@ -127,7 +129,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                       type: TextInputType.number,
                     );
                   },
-                  child: Text("Bars: ${section.bars.toString()}")
+                  child: BodyText("Bars: ${section.bars.toString()}")
                 ),
 
                 //subdivision selector
@@ -136,7 +138,7 @@ class _SectionPopupContentState extends State<SectionPopupContent> {
                   child: Image.asset(songsProvider.getSubdivision(songId, sectionId).imagePath, height: 30, width: 50,),
                 ),
                 ElevatedButton(onPressed: songsProvider.toggleMeterPopup,
-                  child: Text("Meter: ${section.meter.toString()}"),),
+                  child: BodyText("Meter: ${section.meter.toString()}"),),
 
                 AccentSelector(),
 

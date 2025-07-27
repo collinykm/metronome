@@ -5,6 +5,8 @@ import "package:metronome_app/screens/songs/section/section_popup.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
+import "../../theme/typography.dart";
+
 
 class SongPage extends StatefulWidget {
   const SongPage({super.key});
@@ -35,7 +37,7 @@ class _SongPageState extends State<SongPage> {
         return Scaffold(
           appBar: AppBar(
             title: GestureDetector(
-              child: Text(song.songName),
+              child: BodyText(song.songName),
               onTap: () async {
                 TextEditingController controller = TextEditingController(text: song.songName);
 
@@ -99,7 +101,7 @@ class _SongPageState extends State<SongPage> {
                             onPressed: () {
                               songsProvider.addSectionToSong(song.songId);
                             },
-                            child: Text(" + Add sections to this song"),
+                            child: BodyText(" + Add sections to this song"),
                           ),
                         
                         for (final section in song.sectionsList)
@@ -125,9 +127,9 @@ class _SongPageState extends State<SongPage> {
                                 padding: const EdgeInsets.all(20.0),
                                 child: Row(
                                   children: [
-                                    Text(section.sectionName),
-                                    Text("Bars: ${section.bars}"),
-                                    Text("Tempo: ${section.tempo}"),
+                                    BodyText(section.sectionName),
+                                    BodyText("Bars: ${section.bars}"),
+                                    BodyText("Tempo: ${section.tempo}"),
                                     IconButton(
                                       onPressed: () {
                                         songsProvider.setSelectedSectionId(section.sectionId);

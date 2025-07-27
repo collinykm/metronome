@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/theme/typography.dart";
 
 class MeterSelectorUi extends StatelessWidget {
   final List<int> beatsList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
@@ -47,7 +48,7 @@ class MeterSelectorUi extends StatelessWidget {
                   children:[
                     for (int i = 0; i < beatsList.length; i++)
                       Text(beatsList[i].toString(),
-                        style: TextStyle(
+                        style: TextStyles.body.copyWith(
                           color: i == selectedBeatIndex ? Colors.yellow : Colors.black,
                           fontSize: 20,
                         ),
@@ -70,7 +71,7 @@ class MeterSelectorUi extends StatelessWidget {
                   children:[
                     for (int i = 0; i < beatValueList.length; i++)
                       Text(beatValueList[i].toString(),
-                        style: TextStyle(
+                        style: TextStyles.body.copyWith(
                           color: i == selectedBeatValueIndex ? Colors.yellow : Colors.black,
                           fontSize: 20,
                         ),

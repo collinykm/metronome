@@ -5,6 +5,8 @@ import "package:metronome_app/screens/songs/section/section_popup_content.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
+import "../../../theme/typography.dart";
+
 class SectionPopup extends StatefulWidget {
   const SectionPopup({super.key});
 
@@ -85,7 +87,7 @@ class _SectionPopupState extends State<SectionPopup> with SingleTickerProviderSt
                 ),
                 ElevatedButton(
                   onPressed: togglePopup,
-                  child: const Text("CLOSE"),
+                  child: BodyText("CLOSE"),
                 ),
               ],
             ),
