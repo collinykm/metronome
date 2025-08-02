@@ -45,7 +45,9 @@ dependencies:
   hive_flutter: ^1.1.0
   path_provider: ^2.1.0
   flutter_launcher_icons: ^0.14.4
-  google_fonts: ^6.2.1
+  pitch_detector_dart: ^0.0.7
+  flutter_audio_capture: ^1.1.11
+  google_fonts: ^6.3.0
 
 dev_dependencies:
   flutter_test:

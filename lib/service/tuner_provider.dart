@@ -1,364 +1,147 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:flutter_sound/flutter_sound.dart';
-import 'package:logger/logger.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter_audio_capture/flutter_audio_capture.dart';
+import 'package:pitch_detector_dart/pitch_detector.dart';
 
-class TunerProvider with ChangeNotifier{
-  late FlutterSoundRecorder _recorder;
-  StreamSubscription? _recordingDataSubscription;
-  late StreamController<Uint8List> _streamController;
+/// TunerProvider — keeps LAST valid reading when silent.
+class TunerProvider extends ChangeNotifier {
+  // ── Public API ────────────────────────────────────────────────────────────
+  double? get frequency => _currentFrequency == 0 ? null : _currentFrequency;
+  String? get note      => _currentNote.isEmpty ? null : _currentNote;
+  int?    get octave    => _currentNote.isEmpty ? null : _currentOctave;
+  int?    get cents     => _currentNote.isEmpty ? null : _currentCents;
+  bool    get isInitialized => _isInitialized;
+  bool    get isSounding    => _isSounding;
 
-  bool _isRecording = false;
-  bool _isInitialized = false;
-  double _currentPitch = 0.0;
-  bool get isRecording => _isRecording;
-  bool get isInitialized => _isInitialized;
-  double get currentPitch => _currentPitch;
+  /// Returns `[note, octave, cents]` or `null` if we’ve *never* detected anything.
+  List<dynamic>? getTuningArray() =>
+      _currentNote.isEmpty ? null : [_currentNote, _currentOctave, _currentCents];
 
-
-  // Enhanced configuration
-  final int windowSize = 4096;  // Increased for better low frequency resolution
-  final double threshold = 0.20;
-  final int overlapSize = 2048;  // 50% overlap
-  List<double> _audioBuffer = [];
-
-  // Relaxed thresholds
-  final double minConfidence = 0.3;
-  final double minSignalPower = 0.0001;
-
-  final int fftSize = 2048;
-
-
-  // Advanced smoothing configuration
-  final int smoothingBufferSize = 7;
-  List<double> frequencyBuffer = [];
-  double _smoothedPitch = 0.0;
-  double get smoothedPitch => _smoothedPitch;
-
-  // Signal quality metrics
-  double _confidence = 0.0;
-  double _signalPower = 0.0;
-
-
-  // Pre-calculated window coefficients
-  late List<double> _hanningWindow;
-
-  // Pre-emphasis filter coefficient
-  final double preEmphasis = 0.97;
-
-
-
-
-  void initializeWindowing() {
-    _hanningWindow = List.filled(windowSize, 0);
-    for (int i = 0; i < windowSize; i++) {
-      _hanningWindow[i] = 0.5 * (1 - cos(2 * pi * i / (windowSize - 1)));
-    }
-  }
-
-  Future<void> initializeRecorder() async {
-    _recorder = FlutterSoundRecorder(logLevel: Level.off);
-
-
-
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      throw RecordingPermissionException('Microphone permission not granted');
-    }
-
-    await _recorder.openRecorder();
-    await _recorder.setSubscriptionDuration(const Duration(milliseconds: 30));
-
-
+  // ── Init / dispose ───────────────────────────────────────────────────────
+  Future<void> initializeRecorder({int sampleRate = 44100, int bufferSize = 2048}) async {
+    if (_isInitialized) return;
+    _detector   = PitchDetector(audioSampleRate: sampleRate.toDouble(), bufferSize: bufferSize);
+    await _audioCapture.init();
+    await _audioCapture.start(_onAudioData, _onAudioError, sampleRate: sampleRate, bufferSize: bufferSize);
     _isInitialized = true;
     notifyListeners();
-
   }
 
-  Future<void> startRecording() async {
-    if (!_isInitialized) return;
-
-    _streamController = StreamController<Uint8List>();
-    _streamController.stream.listen((data) {
-      _processAudioData(data);
-    });
-
-    try {
-      await _recorder.startRecorder(
-        toStream: _streamController.sink,
-        codec: Codec.pcm16,
-        numChannels: 1,
-        sampleRate: 44100,
-      );
-      _isRecording = true;
-      _audioBuffer.clear();
-      frequencyBuffer.clear();
-      notifyListeners();
-
-    } catch (e) {
-      print('Error starting recording: $e');
-    }
+  @override
+  void dispose() {
+    _audioCapture.stop();
+    _streamSub?.cancel();
+    super.dispose();
   }
 
-  Future<void> stopRecording() async {
-    try {
-      if (_recorder.isRecording) {
-        await _recorder.stopRecorder();
-        await _streamController.close();
-      }
+  // ── Implementation details ───────────────────────────────────────────────
+  final FlutterAudioCapture _audioCapture = FlutterAudioCapture();
+  late PitchDetector _detector;
+  StreamSubscription? _streamSub;
 
-      _isRecording = false;
-      _currentPitch = 0.0;
-      _smoothedPitch = 0.0;
-      _confidence = 0.0;
-      _signalPower = 0.0;
-      _audioBuffer.clear();
-      frequencyBuffer.clear();
+  static const double _volumeThreshold = 0.005;
+  static const double _smoothing       = 0.25;
+  static const double _snapCents       = 60;
+  static const double _minFreq         = 30.0;
+  static const double _maxFreq         = 4000.0;
 
-
-    } catch (e) {
-      print('Error stopping recording: $e');
-    }
-  }
-
-  List<double> _applyPreEmphasis(List<double> input) {
-    List<double> output = List.filled(input.length, 0);
-    output[0] = input[0];
-    for (int i = 1; i < input.length; i++) {
-      output[i] = input[i] - preEmphasis * input[i - 1];
-    }
-    return output;
-  }
-
-  double _calculateSignalPower(List<double> buffer) {
-    double sum = 0;
-    for (double sample in buffer) {
-      sum += sample * sample;
-    }
-    return sum / buffer.length;
-  }
+  bool   _isInitialized = false;
+  bool   _isSounding    = false;
 
 
+  double _currentFrequency = 0.0;
+  String _currentNote      = '';
+  int    _currentOctave    = 0;
+  int    _currentCents     = 0;
+  double _lastSmoothedFreq = 0.0;
 
-  // Debug variables
-  String _debugInfo = '';
-  String get debugInfo => _debugInfo;
+  // ── Audio callbacks ──────────────────────────────────────────────────────
+  void _onAudioError(Object e) => debugPrint('[Tuner] error: $e');
 
-  double _detectPitch(List<double> buffer) {
-    if (buffer.length < windowSize) return 0.0;
+  Future<void> _onAudioData(dynamic obj) async {
+    final Float64List buf = obj is Float64List
+        ? obj
+        : Float64List.fromList((obj as Float32List).map((e) => e.toDouble()).toList());
 
-    _signalPower = _calculateSignalPower(buffer);
+    final rms = _rootMeanSquare(buf);
+    final bool soundingNow = rms > _volumeThreshold;
 
-    if (_signalPower < minSignalPower) {
-      _debugInfo = 'Signal too weak: $_signalPower';
-      _confidence = 0.0;
-      return 0.0;
-    }
-
-    // Step 1: Enhanced autocorrelation for low frequencies
-    List<double> r = List.filled(windowSize ~/ 2, 0);
-    double r0 = 0;
-
-    // Calculate zero-lag autocorrelation with DC removal
-    double mean = 0.0;
-    for (int i = 0; i < windowSize; i++) {
-      mean += buffer[i];
-    }
-    mean /= windowSize;
-
-    for (int i = 0; i < windowSize; i++) {
-      double centered = buffer[i] - mean;
-      r0 += centered * centered;
-    }
-
-    if (r0 == 0) {
-      _debugInfo = 'Zero autocorrelation';
-      return 0.0;
-    }
-
-    // Calculate autocorrelation with DC removal
-    for (int tau = 0; tau < windowSize ~/ 2; tau++) {
-      double sum = 0;
-      for (int i = 0; i < windowSize - tau; i++) {
-        double centered1 = buffer[i] - mean;
-        double centered2 = buffer[i + tau] - mean;
-        sum += centered1 * centered2;
-      }
-      r[tau] = sum / r0;
-    }
-
-    // Step 2: Modified difference function
-    List<double> diff = List.filled(windowSize ~/ 2, 0);
-    List<double> cmnd = List.filled(windowSize ~/ 2, 0);
-
-    diff[0] = 1.0;
-    cmnd[0] = 1.0;
-    double runningSum = 0;
-
-    for (int tau = 1; tau < windowSize ~/ 2; tau++) {
-      diff[tau] = 1.0 - r[tau];
-      runningSum += diff[tau];
-      cmnd[tau] = diff[tau] * tau / (runningSum + double.minPositive);
-    }
-
-    // Step 3: Multi-stage minimum search
-    int minTau = 0;
-    double minValue = double.infinity;
-
-    // Extended search range for lower frequencies (40-1000 Hz)
-    int minIndex = (44100 ~/ 1000).clamp(0, windowSize ~/ 2);  // ~44 samples
-    int maxIndex = (44100 ~/ 40).clamp(0, windowSize ~/ 2);    // ~1102 samples
-
-    // First pass: Find all potential valleys
-    List<Map<String, dynamic>> valleys = [];
-
-    for (int tau = minIndex; tau < maxIndex; tau++) {
-      if (cmnd[tau] < threshold) {
-        if (tau > 0 && tau < windowSize ~/ 2 - 1) {
-          if (cmnd[tau] < cmnd[tau - 1] && cmnd[tau] < cmnd[tau + 1]) {
-            valleys.add({
-              'tau': tau,
-              'value': cmnd[tau],
-              'freq': 44100.0 / tau
-            });
-          }
-        }
-      }
-    }
-
-    // Second pass: Score valleys based on multiple criteria
-    if (valleys.isNotEmpty) {
-      double bestScore = double.negativeInfinity;
-      Map<String, dynamic> bestValley = valleys[0];
-
-      for (var valley in valleys) {
-        double freq = valley['freq'];
-        double value = valley['value'];
-        int tau = valley['tau'];
-
-        // Score based on:
-        // 1. Valley depth (lower is better)
-        // 2. Neighborhood clarity (difference from neighbors)
-        // 3. Sub-harmonics presence
-        double depthScore = 1.0 - value;
-        double clarityScore = (cmnd[tau - 1] + cmnd[tau + 1]) / 2 - value;
-
-        // Check for sub-harmonics
-        double subHarmonicPenalty = 0.0;
-        for (double div = 2; div <= 4; div++) {
-          int subTau = (tau * div).round();
-          if (subTau < windowSize ~/ 2) {
-            if (cmnd[subTau] < value * 1.5) {
-              subHarmonicPenalty += 0.2;
-            }
-          }
-        }
-
-        double score = depthScore + clarityScore - subHarmonicPenalty;
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestValley = valley;
-        }
-      }
-
-      minTau = bestValley['tau'];
-      minValue = bestValley['value'];
-    }
-
-    if (minTau == 0 || minValue == double.infinity) {
-      _debugInfo = 'No valid minimum found';
-      _confidence = 0.0;
-      return 0.0;
-    }
-
-    // Parabolic interpolation for refined frequency
-    double alpha = cmnd[minTau - 1];
-    double beta = cmnd[minTau];
-    double gamma = cmnd[minTau + 1];
-    double refinedTau = minTau + 0.5 * (alpha - gamma) / (alpha - 2 * beta + gamma);
-
-    double frequency = 44100.0 / refinedTau;
-    _confidence = 1.0 - minValue;
-
-    _debugInfo = 'f: ${frequency.toStringAsFixed(1)} Hz, '
-        'c: ${(_confidence * 100).toStringAsFixed(1)}%, '
-        'v: ${minValue.toStringAsFixed(3)}';
-
-    return frequency;
-  }
-
-  void _processAudioData(Uint8List data) {
-    // Convert bytes to audio samples
-    List<double> samples = [];
-    double maxAmp = 0.0;
-
-    for (int i = 0; i < data.length ~/ 2; i++) {
-      int sample = (data[2 * i + 1] << 8) | data[2 * i];
-      if (sample > 32767) sample -= 65536;
-      double normalizedSample = sample / 32768.0;
-      maxAmp = max(maxAmp, normalizedSample.abs());
-      samples.add(normalizedSample);
-    }
-
-    // Debug input signal
-
-    _audioBuffer.addAll(samples);
-
-    // Process when we have enough data
-    while (_audioBuffer.length >= windowSize) {
-      // Create windowed buffer
-      List<double> windowedBuffer = List.filled(windowSize, 0);
-      for (int i = 0; i < windowSize; i++) {
-        windowedBuffer[i] = _audioBuffer[i] * (0.5 - 0.5 * cos(2 * pi * i / (windowSize - 1)));
-      }
-
-      double frequency = _detectPitch(windowedBuffer);
-
-      if (frequency > 0) {  // Removed confidence check for testing
-
-        _currentPitch = frequency;
-        _smoothedPitch = frequency;  // Simplified smoothing for testing
-
+    if (!soundingNow) {
+      // just update flag & quit; keep last good reading
+      if (_isSounding) {
+        _isSounding = false;
         notifyListeners();
       }
+      return;
+    }
+    _isSounding = true;
 
-      _audioBuffer.removeRange(0, windowSize - overlapSize);
+    // YIN pitch detect
+    final result = await _detector.getPitchFromFloatBuffer(buf.toList());
+    if (!result.pitched) return;
+    final double f = result.pitch;
+    if (f < _minFreq || f > _maxFreq) return;
+
+    // Smoothing
+    double smoothed;
+    if (_lastSmoothedFreq == 0) {
+      smoothed = f;
+    } else {
+      final double centsJump = (1200 * (log(f / _lastSmoothedFreq) / ln2)).abs();
+      smoothed = centsJump > _snapCents ? f : _lerp(_lastSmoothedFreq, f, _smoothing);
+    }
+    _lastSmoothedFreq = smoothed;
+
+    // Note mapping
+    final _NoteData nd = _freqToNoteAndCents(smoothed);
+
+    final bool changed = (smoothed - _currentFrequency).abs() > 0.5 || nd.note != _currentNote;
+    if (changed) {
+      _currentFrequency = smoothed;
+      _currentNote      = nd.note;
+      _currentOctave    = nd.octave;
+      _currentCents     = nd.cents.round();
+      notifyListeners();
     }
   }
 
-
-
-  String getNote() {
-    if (_smoothedPitch <= 0) return '-';
-
-    final notes = [
-      'C',
-      'C#',
-      'D',
-      'D#',
-      'E',
-      'F',
-      'F#',
-      'G',
-      'G#',
-      'A',
-      'A#',
-      'B'
-    ];
-    final a4 = 440.0;
-    final a4Index = notes.indexOf('A');
-
-    final halfSteps = (12 * log(_smoothedPitch / a4) / log(2)).round();
-    final octave = ((halfSteps + a4Index) / 12).floor() + 4;
-    final noteIndex = (halfSteps + a4Index) % 12;
-
-    return notes[noteIndex] + octave.toString();
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  static double _rootMeanSquare(Float64List buf) {
+    double s = 0; for (final v in buf) s += v * v; return sqrt(s / buf.length);
   }
 
+  static double _lerp(double a, double b, double t) => a + (b - a) * t;
 
+
+  bool useFlats = true;
+  List<String> get noteNames {
+    if (useFlats) {
+      return ['C','D♭','D','E♭', "E", 'F','G♭','G','A♭','A','B♭', "B"];
+    } else {
+      return ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+    }
+  }
+
+  int _A4_FREQ = 440;
+  void updateA4Freq(int freq){
+    _A4_FREQ = freq;
+  }
+
+  _NoteData _freqToNoteAndCents(double f) {
+    final double midiExact = 69 + 12 * (log(f / 440) / ln2);
+    final int    midiInt   = midiExact.round();
+    final String noteName  = noteNames[midiInt % 12];
+    final int    octave    = (midiInt ~/ 12) - 1;
+    final double refFreq   = _A4_FREQ.toDouble() * pow(2, (midiInt - 69) / 12);
+    final double cents     = 1200 * (log(f / refFreq) / ln2);
+    return _NoteData(note: noteName, octave: octave, cents: cents);
+  }
+}
+
+class _NoteData {
+  final String note; final int octave; final double cents;
+  const _NoteData({required this.note, required this.octave, required this.cents});
 }

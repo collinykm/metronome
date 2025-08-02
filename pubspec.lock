@@ -243,6 +243,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_audio_capture:
+    dependency: "direct main"
+    description:
+      name: flutter_audio_capture
+      sha256: "873fc96bd2e0033d0f14a41a79f7ed44ee52a32b319eab01a4192d8bb272431a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.11"
   flutter_launcher_icons:
     dependency: "direct main"
     description:
@@ -313,10 +321,10 @@ packages:
     dependency: "direct main"
     description:
       name: google_fonts
-      sha256: b1ac0fe2832c9cc95e5e88b57d627c5e68c223b9657f4b96e1487aa9098c7b82
+      sha256: df9763500dadba0155373e9cb44e202ce21bd9ed5de6bdbd05c5854e86839cb8
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.1"
+    version: "6.3.0"
   graphs:
     dependency: transitive
     description:
@@ -621,6 +629,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.2"
+  pitch_detector_dart:
+    dependency: "direct main"
+    description:
+      name: pitch_detector_dart
+      sha256: "47b5dd1f1cd1fb6af553a9b920e271eba62b8a1b9e77fdfaa9421ae1dacb8a90"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.7"
   platform:
     dependency: transitive
     description:
