@@ -11,40 +11,35 @@ class TunerPage extends StatefulWidget {
 }
 
 class _TunerPageState extends State<TunerPage> {
-
+  
   late TunerProvider tunerProvider;
-
+  
   @override
   void initState() {
     tunerProvider = Provider.of<TunerProvider>(context, listen: false);
     tunerProvider.initializeRecorder();
-
     super.initState();
   }
-
+  
   @override
   void dispose() {
-    tunerProvider.dispose();
+    tunerProvider.disposeRecorder();
     super.dispose();
   }
 
-
-
-
+  List<dynamic> get tuningOutputArray {
+    print("within tunerPage: ${tunerProvider.tuningOutputArray}");
+    return tunerProvider.tuningOutputArray;
+  }
+  
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Consumer<TunerProvider>(
-        builder: (context, tunerProvider, child) {
-          return Column(
-            children: [
-              Text('${tunerProvider.getTuningArray()}',
-                  style: const TextStyle(fontSize: 48)),
-              TunerGauge()
-            ],
-          );
-        }
-      )
+    return Center(
+      child: Column(
+        children: [
+          TunerGauge(),
+        ],
+      ),
     );
   }
 }

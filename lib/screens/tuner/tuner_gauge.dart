@@ -17,18 +17,26 @@ class TunerGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int cents = context.select<TunerProvider, int?>((p) => p.cents) ?? 0;
+    final List<dynamic> tuningOutputArray = context.select<TunerProvider, List<dynamic>?>((p) => p.tuningOutputArray) ?? [];
 
     // Map –50 → 0 rad (right),  +50 → π rad (left)
-    final double targetAngle = ((cents + 50) / 100) * math.pi;
 
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: targetAngle),
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      builder: (_, value, __) => CustomPaint(
-        size: Size.square(size),
-        painter: _GaugePainter(angle: value),
-      ),
+    final double targetAngle = -(cents-50)/100*math.pi;
+  //-50 = 1    50 = 0
+    return Column(
+      children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: targetAngle),
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          builder: (_, value, __) => CustomPaint(
+            size: Size.square(size),
+            painter: _GaugePainter(angle: value),
+          ),
+        ),
+        Text("$tuningOutputArray")
+        
+      ],
     );
   }
 }
