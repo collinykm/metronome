@@ -1,9 +1,11 @@
 
 import 'package:flutter/material.dart';
+import 'package:metronome_app/components/play_Button.dart';
 import 'package:metronome_app/screens/metronome/metronome_accent_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_meter_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_subdivision_selector_logic.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
+import 'package:metronome_app/theme/colors.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
 
@@ -18,7 +20,6 @@ class MetronomePage extends StatefulWidget {
 
 class _MetronomePageState extends State<MetronomePage> {
 
-
   @override
   Widget build(BuildContext context) {
 
@@ -26,76 +27,83 @@ class _MetronomePageState extends State<MetronomePage> {
 
       body: Consumer<MetronomeProvider>(
         builder: (context, metronome, child) {
-          return Center(
-            child: Stack(
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
+          return Container(
+            color: AppColors.background,
+            child: Center(
+              child: Stack(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
 
-                    AccentSelector(),
-                    
-                    //meter button
-                    ElevatedButton(
-                      onPressed: metronome.toggleMeterVisibility,
-                      child: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}"),
-                    ),
+                      AccentSelector(),
 
-                    //subdivision button
-                    ElevatedButton(
-                      onPressed: metronome.toggleSubdivisionVisibility,
-                      child: Image.asset(metronome.subdivision.imagePath, height: 30, width: 50,),
-                    ),
-                    
-                    const SizedBox(height: 30,),
-                    TempoKnob(),
-                    BodyText(metronome.tempo.toString()),
+                      //meter button
+                      ElevatedButton(
+                        onPressed: metronome.toggleMeterVisibility,
+                        child: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}"),
+                      ),
 
-                    //Play button
-                    TextButton(onPressed: () {
-                      Provider.of<MetronomeProvider>(context, listen: false).Play();
-                    }, child: BodyText("PLAY")),
-
-                    //Pause button
-                    TextButton(
-                      onPressed: () {
-                        Provider.of<MetronomeProvider>(context, listen: false).Pause();
-                      }, child: BodyText("PAUSE")
-                    ),
+                      //subdivision button
+                      ElevatedButton(
+                        onPressed: metronome.toggleSubdivisionVisibility,
+                        child: Image.asset(metronome.subdivision.imagePath, height: 30, width: 50,),
+                      ),
 
 
 
-                  ],
-                ),
+                      //Play button
+                      PlayButton(
+                          onPress: () {
+                            if (metronome.isPlaying){
+                              metronome.Pause();
+                            } else {
+                              metronome.Play();
+                            }
+                          },
+                          diameter: 125,
+                          icon: metronome.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow)
+                      ),
 
-                if (metronome.isMeterPopupVisible)
-                  GestureDetector(
-                    onTap: () {
-                      metronome.toggleMeterVisibility();
-                    },
-                    child: Container(
-                      color: Colors.black.withOpacity(0.3), // Semi-transparent background
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
+
+                      const SizedBox(height: 30,),
+                      BodyText(metronome.tempo.toString()),
+                      TempoKnob(),
+
+
+
+                    ],
                   ),
 
-                if (metronome.isSubdivisionPopupVisible)
-                  GestureDetector(
-                    onTap: () {
-                      metronome.toggleSubdivisionVisibility();
-                    },
-                    child: Container(
-                      color: Colors.black.withOpacity(0.3), // Semi-transparent background
-                      width: double.infinity,
-                      height: double.infinity,
+                  if (metronome.isMeterPopupVisible)
+                    GestureDetector(
+                      onTap: () {
+                        metronome.toggleMeterVisibility();
+                      },
+                      child: Container(
+                        color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
                     ),
-                  ),
 
-                MeterSelector(),
-                SubdivisionSelector()
-              ],
+                  if (metronome.isSubdivisionPopupVisible)
+                    GestureDetector(
+                      onTap: () {
+                        metronome.toggleSubdivisionVisibility();
+                      },
+                      child: Container(
+                        color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    ),
+
+                  MeterSelector(),
+                  SubdivisionSelector()
+                ],
+              ),
             ),
           );
         },

@@ -5,8 +5,8 @@ import "colors.dart";
 
 class TextStyles {
   // ONE base font method
-  static TextStyle get _base => GoogleFonts.tiltNeon(
-    color: AppColors.textLight,
+  static TextStyle get _base => GoogleFonts.aldrich(
+    color: AppColors.text,
   );
 
   // Styles that build off it
