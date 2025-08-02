@@ -54,17 +54,52 @@ class _MetronomePageState extends State<MetronomePage> {
 
 
                       //Play button
-                      PlayButton(
-                          onPress: () {
-                            if (metronome.isPlaying){
-                              metronome.Pause();
-                            } else {
-                              metronome.Play();
-                            }
-                          },
-                          diameter: 125,
-                          icon: metronome.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        spacing: 20,
+                        children: [
+                          PlayButton(
+                              onPress: () {
+                                if (metronome.isPlaying){
+                                  metronome.Pause();
+                                } else {
+                                  metronome.Play();
+                                }
+                              },
+                              diameter: 140,
+                              icon: metronome.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow)
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 14.0),
+                            child: GestureDetector(
+                              onTap: () {}, //TODO: WRITE CODE FOR TAP TEMPO,
+                              child: Container(
+                                width: 113,
+                                height: 60,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.shadowColor,
+                                      blurRadius: 4,
+                                      offset: Offset(4, 4),
+                                      spreadRadius: 0,
+                                    ),
+                                    BoxShadow(
+
+                                    )
+                                  ],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: BodyText("Tap")
+                              )
+                            ),
+                          )
+                        ],
                       ),
+
 
 
                       const SizedBox(height: 30,),

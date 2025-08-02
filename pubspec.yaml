@@ -48,6 +48,7 @@ dependencies:
   pitch_detector_dart: ^0.0.7
   flutter_audio_capture: ^1.1.11
   google_fonts: ^6.3.0
+  flutter_inner_shadow: ^0.0.1
 
 dev_dependencies:
   flutter_test:
