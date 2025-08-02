@@ -6,23 +6,25 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 
-/// TunerProvider — keeps LAST valid reading when silent.
-class TunerProvider extends ChangeNotifier {
-  // ── Public API ────────────────────────────────────────────────────────────
-  double? get frequency => _currentFrequency == 0 ? null : _currentFrequency;
+/// TunerProvider — keeps last reading when silent and guards callbacks
+/// after dispose so you won’t hit “used after being disposed”.
+class TunerProvider with ChangeNotifier {
+  // ───────────────────────── State exposed to UI ──────────────────────────
+  double? get frequency => _currentNote.isEmpty ? null : _currentFrequency;
   String? get note      => _currentNote.isEmpty ? null : _currentNote;
   int?    get octave    => _currentNote.isEmpty ? null : _currentOctave;
   int?    get cents     => _currentNote.isEmpty ? null : _currentCents;
   bool    get isInitialized => _isInitialized;
   bool    get isSounding    => _isSounding;
+  List<dynamic> get tuningOutputArray => _currentNote.isEmpty ? ["-", "-", "-"] : [_currentNote, _currentOctave, _currentCents];
+  //note, octave, cents
 
-  /// Returns `[note, octave, cents]` or `null` if we’ve *never* detected anything.
-  List<dynamic>? getTuningArray() =>
-      _currentNote.isEmpty ? null : [_currentNote, _currentOctave, _currentCents];
 
-  // ── Init / dispose ───────────────────────────────────────────────────────
+
+  // ───────────────────── Initialisation / teardown ────────────────────────
   Future<void> initializeRecorder({int sampleRate = 44100, int bufferSize = 2048}) async {
     if (_isInitialized) return;
+    _disposed = false;
     _detector   = PitchDetector(audioSampleRate: sampleRate.toDouble(), bufferSize: bufferSize);
     await _audioCapture.init();
     await _audioCapture.start(_onAudioData, _onAudioError, sampleRate: sampleRate, bufferSize: bufferSize);
@@ -30,14 +32,14 @@ class TunerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  @override
-  void dispose() {
+  void disposeRecorder() {
+    _disposed = true;
     _audioCapture.stop();
+    _isInitialized = false;
     _streamSub?.cancel();
-    super.dispose();
   }
 
-  // ── Implementation details ───────────────────────────────────────────────
+  // ─────────────────────────── Internal fields ────────────────────────────
   final FlutterAudioCapture _audioCapture = FlutterAudioCapture();
   late PitchDetector _detector;
   StreamSubscription? _streamSub;
@@ -50,6 +52,7 @@ class TunerProvider extends ChangeNotifier {
 
   bool   _isInitialized = false;
   bool   _isSounding    = false;
+  bool   _disposed      = false; // guard flag
 
 
   double _currentFrequency = 0.0;
@@ -58,10 +61,14 @@ class TunerProvider extends ChangeNotifier {
   int    _currentCents     = 0;
   double _lastSmoothedFreq = 0.0;
 
-  // ── Audio callbacks ──────────────────────────────────────────────────────
-  void _onAudioError(Object e) => debugPrint('[Tuner] error: $e');
+  // ───────────────────────────── Callbacks ────────────────────────────────
+  void _onAudioError(Object e) {
+    if (!_disposed) debugPrint('[Tuner] error: $e');
+  }
 
   Future<void> _onAudioData(dynamic obj) async {
+    if (_disposed) return; // ignore stray mic events after dispose
+
     final Float64List buf = obj is Float64List
         ? obj
         : Float64List.fromList((obj as Float32List).map((e) => e.toDouble()).toList());
@@ -70,8 +77,7 @@ class TunerProvider extends ChangeNotifier {
     final bool soundingNow = rms > _volumeThreshold;
 
     if (!soundingNow) {
-      // just update flag & quit; keep last good reading
-      if (_isSounding) {
+      if (_isSounding && !_disposed) {
         _isSounding = false;
         notifyListeners();
       }
@@ -79,13 +85,11 @@ class TunerProvider extends ChangeNotifier {
     }
     _isSounding = true;
 
-    // YIN pitch detect
     final result = await _detector.getPitchFromFloatBuffer(buf.toList());
     if (!result.pitched) return;
     final double f = result.pitch;
     if (f < _minFreq || f > _maxFreq) return;
 
-    // Smoothing
     double smoothed;
     if (_lastSmoothedFreq == 0) {
       smoothed = f;
@@ -95,11 +99,11 @@ class TunerProvider extends ChangeNotifier {
     }
     _lastSmoothedFreq = smoothed;
 
-    // Note mapping
     final _NoteData nd = _freqToNoteAndCents(smoothed);
 
-    final bool changed = (smoothed - _currentFrequency).abs() > 0.5 || nd.note != _currentNote;
-    if (changed) {
+    final bool changed =
+        (smoothed - _currentFrequency).abs() > 0.5 || nd.note != _currentNote;
+    if (changed && !_disposed) {
       _currentFrequency = smoothed;
       _currentNote      = nd.note;
       _currentOctave    = nd.octave;
@@ -108,13 +112,15 @@ class TunerProvider extends ChangeNotifier {
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+
+
+
+  // ──────────────────────────── Utilities ─────────────────────────────────
   static double _rootMeanSquare(Float64List buf) {
     double s = 0; for (final v in buf) s += v * v; return sqrt(s / buf.length);
   }
 
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
-
 
   bool useFlats = true;
   List<String> get noteNames {
@@ -128,13 +134,22 @@ class TunerProvider extends ChangeNotifier {
   int _A4_FREQ = 440;
   void updateA4Freq(int freq){
     _A4_FREQ = freq;
+    notifyListeners();
   }
+  int transposeSemitones = 0;
+  void updateTransposeSemitones(int semitones) {
+    transposeSemitones += semitones;
+     notifyListeners();
+  }
+  //for example Bb would be -2, Eb would be 3
 
   _NoteData _freqToNoteAndCents(double f) {
     final double midiExact = 69 + 12 * (log(f / 440) / ln2);
     final int    midiInt   = midiExact.round();
-    final String noteName  = noteNames[midiInt % 12];
-    final int    octave    = (midiInt ~/ 12) - 1;
+    //For reference, C4 has a midiInt of 60. this means C0 has a midiInt of 12, which matches with the octave var. to transpose, subtract the transposition
+    final int transposedNoteIndex = midiInt - transposeSemitones;
+    final String noteName  = noteNames[transposedNoteIndex % 12];
+    final int    octave    = (transposedNoteIndex ~/ 12) - 1;
     final double refFreq   = _A4_FREQ.toDouble() * pow(2, (midiInt - 69) / 12);
     final double cents     = 1200 * (log(f / refFreq) / ln2);
     return _NoteData(note: noteName, octave: octave, cents: cents);
