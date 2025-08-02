@@ -5,51 +5,29 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
-import 'package:pitch_detector_dart/pitch_detector_result.dart';
 
-/// A [ChangeNotifier] backend for a real‑time tuner.
-///
-/// * Call [initializeRecorder] once (e.g. in your widget’s `initState`).
-/// * Read `frequency`, `note`, `octave`, `cents` or use [getTuningArray].
+/// TunerProvider — keeps LAST valid reading when silent.
 class TunerProvider extends ChangeNotifier {
   // ── Public API ────────────────────────────────────────────────────────────
-  double? get frequency => _isSounding ? _currentFrequency : null;
-  String? get note      => _isSounding ? _currentNote      : null;
-  int?    get octave    => _isSounding ? _currentOctave    : null;
-  int?    get cents     => _isSounding ? _currentCents     : null; // signed
+  double? get frequency => _currentFrequency == 0 ? null : _currentFrequency;
+  String? get note      => _currentNote.isEmpty ? null : _currentNote;
+  int?    get octave    => _currentNote.isEmpty ? null : _currentOctave;
+  int?    get cents     => _currentNote.isEmpty ? null : _currentCents;
   bool    get isInitialized => _isInitialized;
   bool    get isSounding    => _isSounding;
 
-  /// Returns `[noteName, octave, cents]`, e.g. `['C#', 6, -20]` (flat) or
-  /// `['A', 4, 5]` (sharp); `null` when silent.
+  /// Returns `[note, octave, cents]` or `null` if we’ve *never* detected anything.
   List<dynamic>? getTuningArray() =>
-      _isSounding ? [_currentNote, _currentOctave, _currentCents] : null;
+      _currentNote.isEmpty ? null : [_currentNote, _currentOctave, _currentCents];
 
-  /// Initialise microphone capture & pitch detection. Safe to call multiple times.
-  Future<void> initializeRecorder({
-    int sampleRate = 44100,
-    int bufferSize = 2048,
-  }) async {
+  // ── Init / dispose ───────────────────────────────────────────────────────
+  Future<void> initializeRecorder({int sampleRate = 44100, int bufferSize = 2048}) async {
     if (_isInitialized) return;
-
-    _sampleRate = sampleRate;
-    _bufferSize = bufferSize;
-    _detector   = PitchDetector(
-      audioSampleRate: sampleRate.toDouble(),
-      bufferSize: bufferSize,
-    );
-
+    _detector   = PitchDetector(audioSampleRate: sampleRate.toDouble(), bufferSize: bufferSize);
     await _audioCapture.init();
-    await _audioCapture.start(
-      _onAudioData,
-      _onAudioError,
-      sampleRate: sampleRate,
-      bufferSize: bufferSize,
-    );
-
+    await _audioCapture.start(_onAudioData, _onAudioError, sampleRate: sampleRate, bufferSize: bufferSize);
     _isInitialized = true;
     notifyListeners();
-    print('[Tuner] Recorder initialised (sr=$sampleRate, buf=$bufferSize)');
   }
 
   @override
@@ -64,116 +42,101 @@ class TunerProvider extends ChangeNotifier {
   late PitchDetector _detector;
   StreamSubscription? _streamSub;
 
-  // Tunables
-  static const double _volumeThreshold = 0.005; // RMS below = silence
-  static const double _smoothing       = 0.25;  // 0‑1  (higher = snappier)
-  static const double _snapCents       = 60;    // >60¢ jump = snap to new freq
+  static const double _volumeThreshold = 0.005;
+  static const double _smoothing       = 0.25;
+  static const double _snapCents       = 60;
   static const double _minFreq         = 30.0;
   static const double _maxFreq         = 4000.0;
 
-  // State
-  bool   _isInitialized    = false;
-  bool   _isSounding       = false;
-  late int _sampleRate;
-  late int _bufferSize;
+  bool   _isInitialized = false;
+  bool   _isSounding    = false;
+
 
   double _currentFrequency = 0.0;
   String _currentNote      = '';
   int    _currentOctave    = 0;
-  int    _currentCents     = 0; // signed (‑50 .. +50 typical)
+  int    _currentCents     = 0;
   double _lastSmoothedFreq = 0.0;
 
-  void _onAudioError(Object e) => print('[Tuner] Audio error: $e');
+  // ── Audio callbacks ──────────────────────────────────────────────────────
+  void _onAudioError(Object e) => debugPrint('[Tuner] error: $e');
 
   Future<void> _onAudioData(dynamic obj) async {
-    // flutter_audio_capture streams Float64List (iOS) or Float32List (Android)
-    final Float64List buf64 = obj is Float64List
+    final Float64List buf = obj is Float64List
         ? obj
         : Float64List.fromList((obj as Float32List).map((e) => e.toDouble()).toList());
 
-    // Quick RMS gate
-    final rms = _rootMeanSquare(buf64);
-    _isSounding = rms > _volumeThreshold;
+    final rms = _rootMeanSquare(buf);
+    final bool soundingNow = rms > _volumeThreshold;
 
-    if (!_isSounding) {
-      if (_currentFrequency != 0) {
-        _currentFrequency = 0;
+    if (!soundingNow) {
+      // just update flag & quit; keep last good reading
+      if (_isSounding) {
+        _isSounding = false;
         notifyListeners();
       }
       return;
     }
+    _isSounding = true;
 
-    // Pitch detection (YIN)
-    final PitchDetectorResult result = await _detector.getPitchFromFloatBuffer(buf64.toList());
+    // YIN pitch detect
+    final result = await _detector.getPitchFromFloatBuffer(buf.toList());
     if (!result.pitched) return;
+    final double f = result.pitch;
+    if (f < _minFreq || f > _maxFreq) return;
 
-    final double detectedFreq = result.pitch;
-    if (detectedFreq < _minFreq || detectedFreq > _maxFreq) return;
-
-    // ── Adaptive smoothing ──────────────────────────────────────────────
+    // Smoothing
     double smoothed;
     if (_lastSmoothedFreq == 0) {
-      smoothed = detectedFreq;
+      smoothed = f;
     } else {
-      final double centsDiff =
-      (1200 * (log(detectedFreq / _lastSmoothedFreq) / ln2)).abs();
-      smoothed = centsDiff > _snapCents
-          ? detectedFreq
-          : _lerp(_lastSmoothedFreq, detectedFreq, _smoothing);
+      final double centsJump = (1200 * (log(f / _lastSmoothedFreq) / ln2)).abs();
+      smoothed = centsJump > _snapCents ? f : _lerp(_lastSmoothedFreq, f, _smoothing);
     }
     _lastSmoothedFreq = smoothed;
 
-    // Note mapping & cents offset
+    // Note mapping
     final _NoteData nd = _freqToNoteAndCents(smoothed);
 
-    // Update state if display‑worthy change
-    final bool changed =
-        (smoothed - _currentFrequency).abs() > 0.5 || nd.note != _currentNote;
+    final bool changed = (smoothed - _currentFrequency).abs() > 0.5 || nd.note != _currentNote;
     if (changed) {
       _currentFrequency = smoothed;
       _currentNote      = nd.note;
       _currentOctave    = nd.octave;
       _currentCents     = nd.cents.round();
       notifyListeners();
-      print('[Tuner] ${_currentNote}${_currentOctave} ' // eg. C#6
-          '${_currentCents >= 0 ? '+' : ''}${_currentCents}¢ ' // +5¢ / ‑12¢
-          '(${_currentFrequency.toStringAsFixed(2)} Hz)');
     }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
-
   static double _rootMeanSquare(Float64List buf) {
-    double sumSq = 0;
-    for (final v in buf) sumSq += v * v;
-    return sqrt(sumSq / buf.length);
+    double s = 0; for (final v in buf) s += v * v; return sqrt(s / buf.length);
   }
 
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
 
-  static const List<String> _noteNames = [
-    'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
-  ];
 
-  _NoteData _freqToNoteAndCents(double freq) {
-    // Fractional MIDI note where A4=440 Hz → 69
-    final double midiExact = 69 + 12 * (log(freq / 440) / ln2);
+  bool useFlats = true;
+  List<String> get noteNames {
+    if (useFlats) {
+      return ['C','D♭','D','E♭', "E", 'F','G♭','G','A♭','A','B♭', "B"];
+    } else {
+      return ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    }
+
+  }
+  _NoteData _freqToNoteAndCents(double f) {
+    final double midiExact = 69 + 12 * (log(f / 440) / ln2);
     final int    midiInt   = midiExact.round();
-
-    final String noteName  = _noteNames[midiInt % 12];
+    final String noteName  = noteNames[midiInt % 12];
     final int    octave    = (midiInt ~/ 12) - 1;
-
-    // Reference frequency of that MIDI note
     final double refFreq   = 440.0 * pow(2, (midiInt - 69) / 12);
-    final double cents     = 1200 * (log(freq / refFreq) / ln2);
-
+    final double cents     = 1200 * (log(f / refFreq) / ln2);
     return _NoteData(note: noteName, octave: octave, cents: cents);
   }
 }
 
 class _NoteData {
-  final String note;
-  final int    octave;
-  final double cents; // signed
+  final String note; final int octave; final double cents;
   const _NoteData({required this.note, required this.octave, required this.cents});
 }

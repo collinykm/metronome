@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/screens/tuner/tuner_gauge.dart";
 import "package:metronome_app/service/tuner_provider.dart";
 import "package:provider/provider.dart";
 
@@ -35,14 +36,11 @@ class _TunerPageState extends State<TunerPage> {
     return Scaffold(
       body: Consumer<TunerProvider>(
         builder: (context, tunerProvider, child) {
-          if (!tunerProvider.isSounding) {
-            return const Text('—');
-          }
           return Column(
             children: [
               Text('${tunerProvider.getTuningArray()}',
                   style: const TextStyle(fontSize: 48)),
-              Text('${tunerProvider.frequency!.toStringAsFixed(2)} Hz'),
+              TunerGauge()
             ],
           );
         }
