@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
+import 'package:metronome_app/components/filtered_image.dart';
 import 'package:metronome_app/components/play_Button.dart';
+import 'package:metronome_app/components/selector_button.dart';
 import 'package:metronome_app/screens/metronome/metronome_accent_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_meter_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_subdivision_selector_logic.dart';
@@ -39,17 +41,24 @@ class _MetronomePageState extends State<MetronomePage> {
 
                       AccentSelector(),
 
-                      //meter button
-                      ElevatedButton(
-                        onPressed: metronome.toggleMeterVisibility,
-                        child: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}"),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        spacing: 80,
+                        children: [
+                          //Note: subdivision button
+                          SelectorButton(
+                              onPress: metronome.toggleSubdivisionVisibility,
+                              content: FilteredImage(assetPath: metronome.subdivision.imagePath, height: 30, width: 50,),
+                          ),
+                          //Note: meter selector
+                          SelectorButton(
+                              onPress: metronome.toggleMeterVisibility,
+                              content: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}")
+                          ),
+                        ],
                       ),
 
-                      //subdivision button
-                      ElevatedButton(
-                        onPressed: metronome.toggleSubdivisionVisibility,
-                        child: Image.asset(metronome.subdivision.imagePath, height: 30, width: 50,),
-                      ),
 
 
 
@@ -59,6 +68,7 @@ class _MetronomePageState extends State<MetronomePage> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         spacing: 20,
                         children: [
+                          //Note: Play Button
                           PlayButton(
                               onPress: () {
                                 if (metronome.isPlaying){
@@ -70,6 +80,7 @@ class _MetronomePageState extends State<MetronomePage> {
                               diameter: 140,
                               icon: metronome.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow)
                           ),
+                          //Note: Tap Tempo
                           Padding(
                             padding: const EdgeInsets.only(bottom: 14.0),
                             child: GestureDetector(
@@ -101,7 +112,7 @@ class _MetronomePageState extends State<MetronomePage> {
                       ),
 
 
-
+                      //Note: tempo selector
                       const SizedBox(height: 30,),
                       BodyText(metronome.tempo.toString()),
                       TempoKnob(),
