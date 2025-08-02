@@ -123,14 +123,19 @@ class TunerProvider extends ChangeNotifier {
     } else {
       return ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
     }
-
   }
+
+  int _A4_FREQ = 440;
+  void updateA4Freq(int freq){
+    _A4_FREQ = freq;
+  }
+
   _NoteData _freqToNoteAndCents(double f) {
     final double midiExact = 69 + 12 * (log(f / 440) / ln2);
     final int    midiInt   = midiExact.round();
     final String noteName  = noteNames[midiInt % 12];
     final int    octave    = (midiInt ~/ 12) - 1;
-    final double refFreq   = 440.0 * pow(2, (midiInt - 69) / 12);
+    final double refFreq   = _A4_FREQ.toDouble() * pow(2, (midiInt - 69) / 12);
     final double cents     = 1200 * (log(f / refFreq) / ln2);
     return _NoteData(note: noteName, octave: octave, cents: cents);
   }
