@@ -259,6 +259,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_audio_capture:
+    dependency: "direct main"
+    description:
+      name: flutter_audio_capture
+      sha256: "873fc96bd2e0033d0f14a41a79f7ed44ee52a32b319eab01a4192d8bb272431a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.11"
   flutter_launcher_icons:
     dependency: "direct main"
     description:
@@ -621,6 +629,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.2"
+  pitch_detector_dart:
+    dependency: "direct main"
+    description:
+      name: pitch_detector_dart
+      sha256: "47b5dd1f1cd1fb6af553a9b920e271eba62b8a1b9e77fdfaa9421ae1dacb8a90"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.7"
+  pitchupdart:
+    dependency: "direct main"
+    description:
+      name: pitchupdart
+      sha256: "42a5bf627d34fcc23f1ee2da673e2ffc3b3853a0c1c43eca61fddd318a6d20fb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
   platform:
     dependency: transitive
     description:
