@@ -13,6 +13,7 @@ class MetronomeProvider with ChangeNotifier{
   final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
 
   int _tempo = 120;
+  final ValueNotifier<int> tempoListenable = ValueNotifier<int>(0);
   List<int> _accentsList = [1, 1, 1, 1];
   Subdivision _subdivision = allSubdivisionsMap[4]![0];
 
@@ -25,7 +26,7 @@ class MetronomeProvider with ChangeNotifier{
   List<int> get subdivisionList => _subdivision.subdivisionList;
   List<int> get meter => _meter;
   bool get isPlaying => _isPlaying;
-  double initialAngle() => (_tempo - 20)*8*pi/380;
+
 
 
 
@@ -105,7 +106,9 @@ class MetronomeProvider with ChangeNotifier{
 
   //updating playing related parameters
   void updateTempo(int tempo) async {
+    if (tempo == _tempo) return;
     _tempo = tempo;
+    tempoListenable.value = tempo;
     notifyListeners();
     await methodChannel.invokeMethod("updateTempo", tempo);
   }
@@ -145,7 +148,7 @@ class MetronomeProvider with ChangeNotifier{
 
 
 
-  double _totalAngle = (120 - 20)*8*pi/380;  //120 here represents the default tempo
+  double _totalAngle = 2*pi;  //120 here represents the default tempo
   double get totalAngle => _totalAngle;
   Offset? _previousOffset;
   Offset? get previousOffset => _previousOffset;
@@ -158,7 +161,7 @@ class MetronomeProvider with ChangeNotifier{
     if (_previousOffset == null) return;
 
     final currentOffset = details.localPosition;
-    final center = Offset(50, 50); //TODO: Match with half size of the knob
+    final center = Offset(120, 120); //TODO: Match with half size of the knob
 
     // Calculate the angle between the previous and current touch positions
     final previousVector = _previousOffset! - center;
@@ -178,9 +181,14 @@ class MetronomeProvider with ChangeNotifier{
     }
     // Update the total angle, clamping it between 0 and 8π
 
-    _totalAngle = (totalAngle + delta).clamp(0.0, 8 * pi);
+    _totalAngle = (totalAngle + delta).clamp(-2*pi/19, -2*pi/19+8 * pi);
 
-    final int tempo = (totalAngle / 8 / pi * 380 + 20.0).toInt(); // calculates a tempo between 20 and 400
+    const double slope = 380 / (8 * pi);   // 47.5 / π
+    const double shift = 2 * pi / 19;      // anchor so f(2π) = 120
+
+    final double raw = 20 + slope * (_totalAngle + shift);
+    final int tempo = raw.round().clamp(20, 400);
+    //final int tempo = (totalAngle / 8 / pi * 380+25).toInt(); // calculates a tempo between 20 and 400
     updateTempo(tempo);
 
     _previousOffset = currentOffset;

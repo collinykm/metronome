@@ -35,12 +35,15 @@ class _MetronomePageState extends State<MetronomePage> {
               child: Stack(
                 children: [
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-
+                      const SizedBox(height: 40,),
                       AccentSelector(),
 
+                      const SizedBox(height: 40,),
+
+                      //Note: subdivision and meter selector
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -60,13 +63,13 @@ class _MetronomePageState extends State<MetronomePage> {
                       ),
 
 
+                      const SizedBox(height: 40,),
 
-
-                      //Play button
+                      //Note: Play and Tap button
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        spacing: 20,
+                        spacing: 60,
                         children: [
                           //Note: Play Button
                           PlayButton(
@@ -113,11 +116,12 @@ class _MetronomePageState extends State<MetronomePage> {
 
 
                       //Note: tempo selector
-                      const SizedBox(height: 30,),
+                      const SizedBox(height: 0,),
                       BodyText(metronome.tempo.toString()),
+                      BodyText("BPM"),
                       TempoKnob(),
 
-
+                      const SizedBox(height: 20,),
 
                     ],
                   ),
