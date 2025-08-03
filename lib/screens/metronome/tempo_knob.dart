@@ -27,7 +27,7 @@ class _TempoKnobState extends State<TempoKnob> {
   }
 
   void _onCounterChanged() {
-    HapticFeedback.lightImpact();
+    HapticFeedback.selectionClick();
   }
 
   @override
@@ -73,8 +73,11 @@ class _TempoKnobState extends State<TempoKnob> {
             ),
 
             // Everything inside rotates
-            child: Transform.rotate(
-              angle: angle,
+            child: AnimatedRotation(
+              turns: angle / (2 * math.pi),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutBack,
+              alignment: Alignment.center,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
