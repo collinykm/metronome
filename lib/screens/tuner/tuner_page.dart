@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:metronome_app/screens/tuner/tuner_gauge.dart";
 import "package:metronome_app/service/tuner_provider.dart";
+import "package:metronome_app/theme/colors.dart";
 import "package:provider/provider.dart";
 
 class TunerPage extends StatefulWidget {
@@ -34,11 +35,19 @@ class _TunerPageState extends State<TunerPage> {
   
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          TunerGauge(),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            const SizedBox(height: 40,),
+            TunerGauge(),
+            const SizedBox(height: 40,),
+
+          ],
+        ),
       ),
     );
   }
