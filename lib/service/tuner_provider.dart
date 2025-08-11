@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 
 /// TunerProvider — keeps last reading when silent and guards callbacks
@@ -23,6 +24,8 @@ class TunerProvider with ChangeNotifier {
 
   // ───────────────────── Initialisation / teardown ────────────────────────
   Future<void> initializeRecorder({int sampleRate = 44100, int bufferSize = 2048}) async {
+    final st = await Permission.microphone.request();
+    if (!st.isGranted) return; // don’t start recorder
     if (_isInitialized) return;
     _disposed = false;
     _detector   = PitchDetector(audioSampleRate: sampleRate.toDouble(), bufferSize: bufferSize);
