@@ -35,6 +35,7 @@ class _TunerPageState extends State<TunerPage> {
   
   @override
   Widget build(BuildContext context) {
+    final List<dynamic> tuningOutputArray = context.select<TunerProvider, List<dynamic>?>((p) => p.tuningOutputArray) ?? [];
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background
@@ -45,6 +46,7 @@ class _TunerPageState extends State<TunerPage> {
             const SizedBox(height: 40,),
             TunerGauge(),
             const SizedBox(height: 40,),
+            Text("${tuningOutputArray[0]}${tuningOutputArray[1]}")
 
           ],
         ),

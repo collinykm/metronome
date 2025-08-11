@@ -11,7 +11,7 @@ class TunerGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int cents = context.select<TunerProvider, int?>((p) => p.cents) ?? 0;
-    final List<dynamic> tuningOutputArray = context.select<TunerProvider, List<dynamic>?>((p) => p.tuningOutputArray) ?? [];
+
 
 
     //new idea: map from 15 degrees to 165 degrees
@@ -28,7 +28,7 @@ class TunerGauge extends StatelessWidget {
             painter: _GaugePainter(angle: value),
           ),
         ),
-        Text("$tuningOutputArray")
+
         
       ],
     );
