@@ -8,6 +8,8 @@ import 'package:metronome_app/service/metronome_provider.dart';
 import 'package:metronome_app/service/songs_provider.dart';
 import 'package:metronome_app/service/subdivision.dart';
 import 'package:metronome_app/service/tuner_provider.dart';
+import 'package:metronome_app/theme/colors.dart';
+import 'package:metronome_app/theme/icons.dart';
 import 'package:metronome_app/theme/typography.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -60,20 +62,34 @@ class _NavBarAppState extends State<NavBarApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedPageIndex,
-        onDestinationSelected: (int index) {
-          setState(() {
-            selectedPageIndex = index;
-          });
-        },
+      bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Colors.grey.shade300,
+                width: 1
+              )
+            )
+          ),
+        child: NavigationBar(
+          selectedIndex: selectedPageIndex,
+          onDestinationSelected: (int index) {
+            setState(() {
+              selectedPageIndex = index;
+            });
+          },
+          backgroundColor: AppColors.background,
+          indicatorColor: AppColors.accent1,
+          indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
-        destinations: const <Widget>[
-          NavigationDestination(icon: Icon(Icons.timer), label: "Metronome"),
-          NavigationDestination(icon: Icon(Icons.tune), label: "Tuner"),
-          NavigationDestination(icon: Icon(Icons.music_note), label: "Songs"),
-          NavigationDestination(icon: Icon(Icons.settings), label: "Settings"),
-        ],
+
+          destinations: <Widget>[
+            NavigationDestination(icon: AppIcons.metronome, label: "Metronome"),
+            NavigationDestination(icon: AppIcons.tuner, label: "Tuner"),
+            NavigationDestination(icon: AppIcons.song, label: "Songs"),
+            NavigationDestination(icon: AppIcons.settings, label: "Settings"),
+          ],
+        ),
       ),
 
       body: <Widget>[
