@@ -8,6 +8,7 @@ import 'package:metronome_app/screens/metronome/metronome_meter_selector_logic.d
 import 'package:metronome_app/screens/metronome/metronome_subdivision_selector_logic.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
 import 'package:metronome_app/theme/colors.dart';
+import 'package:metronome_app/theme/icons.dart';
 import 'package:provider/provider.dart';
 import 'package:metronome_app/screens/metronome/tempo_knob.dart';
 
@@ -81,7 +82,7 @@ class _MetronomePageState extends State<MetronomePage> {
                                 }
                               },
                               diameter: 140,
-                              icon: metronome.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow)
+                              icon: metronome.isPlaying ? AppIcons.pause : AppIcons.play
                           ),
                           //Note: Tap Tempo
                           Padding(

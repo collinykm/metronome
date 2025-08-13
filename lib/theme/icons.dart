@@ -23,4 +23,12 @@ class AppIcons {
     size: 20,
     color: AppColors.primary,
   );
+  static final play = Icon(
+    PhosphorIconsFill.play,
+    color: AppColors.accent1
+  );
+  static final pause = Icon(
+      PhosphorIconsFill.pause,
+      color: AppColors.accent1
+  );
 }
