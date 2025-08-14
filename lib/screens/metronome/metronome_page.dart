@@ -1,7 +1,9 @@
 
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:metronome_app/components/filtered_image.dart';
-import 'package:metronome_app/components/play_Button.dart';
+import 'package:metronome_app/components/play_button.dart';
 import 'package:metronome_app/components/selector_button.dart';
 import 'package:metronome_app/screens/metronome/metronome_accent_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_meter_selector_logic.dart';
@@ -22,6 +24,7 @@ class MetronomePage extends StatefulWidget {
 }
 
 class _MetronomePageState extends State<MetronomePage> {
+  List<DateTime> tapTimes = [];
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +91,27 @@ class _MetronomePageState extends State<MetronomePage> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 14.0),
                             child: GestureDetector(
-                              onTap: () {}, //TODO: WRITE CODE FOR TAP TEMPO,
+                              onTapDown: (details) {
+                                final currentTime = DateTime.now();
+                                //if there's been 3 seconds of no taps
+                                if (tapTimes.isNotEmpty) {
+                                  if (currentTime.difference(tapTimes.last) >
+                                      Duration(seconds: 3)) {
+                                    tapTimes.clear();
+                                  }
+                                }
+                                tapTimes.add(currentTime);
+                                //if there's at least 2 entries, calculate tempo
+                                if (tapTimes.length >= 2) {
+                                  print(tapTimes);
+                                  final timeDifference = currentTime.difference(tapTimes[tapTimes.length - 2]);
+                                  print(timeDifference.inMilliseconds);
+                                  final tempo = (60.0 / (timeDifference.inMicroseconds / 1000000.0)).toInt();
+                                  metronome.updateTempo(tempo);
+                                }
+
+
+                              },
                               child: Container(
                                 width: 113,
                                 height: 60,
