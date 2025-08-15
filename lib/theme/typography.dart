@@ -24,3 +24,13 @@ class BodyText extends StatelessWidget {
     return Text(text, style: TextStyles.body,);
   }
 }
+
+class TitleText extends StatelessWidget {
+  final String text;
+  const TitleText(this.text, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: TextStyles.title,);
+  }
+}

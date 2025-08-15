@@ -21,6 +21,49 @@ class TunerProvider with ChangeNotifier {
   //note, octave, cents
 
 
+  //Region Things I need to worry about
+  bool _useFlats = true;
+  bool get useFlats => _useFlats;
+  void toggleFlats() {
+    _useFlats = !_useFlats;
+    notifyListeners();
+  }
+  List<String> get noteNames {
+    if (_useFlats) {
+      return ['C','D♭','D','E♭', "E", 'F','G♭','G','A♭','A','B♭', "B"];
+    } else {
+      return ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+    }
+  }
+
+  int _A4_FREQ = 440;
+  int get A4_FREQ => _A4_FREQ;
+  void updateA4Freq(int freq){
+    _A4_FREQ = freq;
+    notifyListeners();
+  }
+  int transposeSemitones = 0;
+  void updateTransposeSemitones(int semitones) {
+    transposeSemitones += semitones;
+    notifyListeners();
+  }
+  //for example Bb would be -2, Eb would be 3
+
+  bool _settingsVisible = false;
+  bool get settingsVisible => _settingsVisible;
+  void toggleSettingsVisibility() {_settingsVisible = !_settingsVisible; notifyListeners();}
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ───────────────────── Initialisation / teardown ────────────────────────
   Future<void> initializeRecorder({int sampleRate = 44100, int bufferSize = 2048}) async {
@@ -117,7 +160,6 @@ class TunerProvider with ChangeNotifier {
 
 
 
-
   // ──────────────────────────── Utilities ─────────────────────────────────
   static double _rootMeanSquare(Float64List buf) {
     double s = 0; for (final v in buf) s += v * v; return sqrt(s / buf.length);
@@ -125,26 +167,6 @@ class TunerProvider with ChangeNotifier {
 
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
 
-  bool useFlats = true;
-  List<String> get noteNames {
-    if (useFlats) {
-      return ['C','D♭','D','E♭', "E", 'F','G♭','G','A♭','A','B♭', "B"];
-    } else {
-      return ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-    }
-  }
-
-  int _A4_FREQ = 440;
-  void updateA4Freq(int freq){
-    _A4_FREQ = freq;
-    notifyListeners();
-  }
-  int transposeSemitones = 0;
-  void updateTransposeSemitones(int semitones) {
-    transposeSemitones += semitones;
-     notifyListeners();
-  }
-  //for example Bb would be -2, Eb would be 3
 
   _NoteData _freqToNoteAndCents(double f) {
     final double midiExact = 69 + 12 * (log(f / 440) / ln2);
@@ -157,6 +179,8 @@ class TunerProvider with ChangeNotifier {
     final double cents     = 1200 * (log(f / refFreq) / ln2);
     return _NoteData(note: noteName, octave: octave, cents: cents);
   }
+
+
 }
 
 class _NoteData {

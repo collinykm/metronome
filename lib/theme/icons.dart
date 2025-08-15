@@ -35,4 +35,16 @@ class AppIcons {
     PhosphorIconsRegular.x,
     color: AppColors.primary
   );
+  static final sliders = Icon(
+      PhosphorIconsRegular.sliders,
+      color: AppColors.primary
+  );
+  static final rightArrow = Icon(
+      PhosphorIconsRegular.arrowRight,
+      color: AppColors.primary
+  );
+  static final equal = Icon(
+      PhosphorIconsRegular.equals,
+      color: AppColors.primary
+  );
 }

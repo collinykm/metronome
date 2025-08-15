@@ -1,7 +1,11 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/components/popup_container.dart";
 import "package:metronome_app/screens/tuner/tuner_gauge.dart";
+import "package:metronome_app/screens/tuner/tuner_settings.dart";
 import "package:metronome_app/service/tuner_provider.dart";
 import "package:metronome_app/theme/colors.dart";
+import "package:metronome_app/theme/icons.dart";
+import "package:metronome_app/theme/typography.dart";
 import "package:provider/provider.dart";
 
 class TunerPage extends StatefulWidget {
@@ -29,31 +33,70 @@ class _TunerPageState extends State<TunerPage> {
   }
 
   List<dynamic> get tuningOutputArray {
-    print("within tunerPage: ${tunerProvider.tuningOutputArray}");
     return tunerProvider.tuningOutputArray;
   }
   
   @override
   Widget build(BuildContext context) {
+
     final List<dynamic> tuningOutputArray = context.select<TunerProvider, List<dynamic>?>((p) => p.tuningOutputArray) ?? [];
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.background
-      ),
-      child: SafeArea(
-        child: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40,),
-              TunerGauge(),
-              const SizedBox(height: 40,),
-              Text("${tuningOutputArray[0]}${tuningOutputArray[1]}")
-        
-            ],
-          ),
-        ),
-      ),
-    );
+    return Consumer<TunerProvider>(
+        builder: (context, tuner, child) {
+          return Container(
+            decoration: BoxDecoration(
+                color: AppColors.background
+            ),
+            child: Center(
+              child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 80,),
+                        TunerGauge(),
+                        const SizedBox(height: 40,),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            BodyText("A4 = ${tuner.A4_FREQ}"),
+                            Text(
+                              "${tuningOutputArray[0]}${tuningOutputArray[1]}",
+                              style: TextStyles.title.copyWith(
+                                  fontSize: 40
+                              ),
+                            ),
+
+                            IconButton(
+                                onPressed: tuner.toggleSettingsVisibility,
+                                icon: AppIcons.sliders
+                            ),
+                          ],
+                        )
+
+                      ],
+                    ),
+
+
+                    if (tuner.settingsVisible)
+                      GestureDetector(
+                        onTap: () {
+                          tuner.toggleSettingsVisibility();
+                        },
+                        child: Container(
+                          color: AppColors.shadowColor, // Semi-transparent background
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+
+                    TunerSettings(isVisible: tuner.settingsVisible)
+                  ]
+              ),
+            ),
+          );
+        }
+      );
+
   }
 }
