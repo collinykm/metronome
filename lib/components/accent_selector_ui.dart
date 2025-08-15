@@ -55,7 +55,6 @@ class AccentPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    print(accent);
     // Note: big border
     final borderStroke = Paint()
         ..strokeWidth = 2

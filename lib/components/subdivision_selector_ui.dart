@@ -1,4 +1,7 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/components/filtered_image.dart";
+import "package:metronome_app/theme/colors.dart";
+import "package:metronome_app/theme/icons.dart";
 
 import "../service/subdivision.dart";
 
@@ -23,38 +26,43 @@ class SubdivisionSelectorUI extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedPositioned(
         duration: Duration(milliseconds: 200),
-        left: isSubdivisionPopupVisible ? 0 : -150,
+        left: isSubdivisionPopupVisible ? 30 : -150,
         top: 200,
         child: Container(
           width: 150,
-          height: 300,
-          color: Colors.white,
+          height: 270,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12)
+          ),
+
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
             children: [
               //select number of beats
-              Container(
+              SizedBox(
                 height: 200,
                 width: 50,
+
                 child: ListWheelScrollView(
                   itemExtent: 50, // Height of each item
                   diameterRatio: 1.5, // Adjust the size of the wheel
                   physics: FixedExtentScrollPhysics(),
                   controller: FixedExtentScrollController(initialItem: selectedIndex),
-                  onSelectedItemChanged: handleSelectedItemChanged,
+                  onSelectedItemChanged: (index) {
+                    handleSelectedItemChanged(index);
+                  },
 
                   children:[
-                    for (Subdivision sub in subdivisionsList)
-                      SizedBox(
-                        height: 30,
-                        width: 50,
-                        child: Image.asset(sub.imagePath),
-                      )
+                    for (int i = 0; i < subdivisionsList.length; i++)
+                      FilteredImage(assetPath: subdivisionsList[i].imagePath, width: 50, height: 30, color: i == selectedIndex ? AppColors.accent2 : AppColors.primary)
                   ],
                 ),
               ),
 
 
-              IconButton(onPressed: toggleVisibility, icon: Icon(Icons.close))
+              IconButton(onPressed: toggleVisibility, icon: AppIcons.close)
 
             ],
           ),

@@ -57,7 +57,7 @@ class _MetronomePageState extends State<MetronomePage> {
                           //Note: subdivision button
                           SelectorButton(
                               onPress: metronome.toggleSubdivisionVisibility,
-                              content: FilteredImage(assetPath: metronome.subdivision.imagePath, height: 30, width: 50,),
+                              content: FilteredImage(assetPath: metronome.subdivision.imagePath, height: 30, width: 50, color: AppColors.accent1,),
                           ),
                           //Note: meter selector
                           SelectorButton(
@@ -107,9 +107,7 @@ class _MetronomePageState extends State<MetronomePage> {
                                 tapTimes.add(currentTime);
                                 //if there's at least 2 entries, calculate tempo
                                 if (tapTimes.length >= 2) {
-                                  print(tapTimes);
                                   final timeDifference = currentTime.difference(tapTimes[tapTimes.length - 2]);
-                                  print(timeDifference.inMilliseconds);
                                   final tempo = (60.0 / (timeDifference.inMicroseconds / 1000000.0)).toInt();
                                   metronome.updateTempo(tempo);
                                 }

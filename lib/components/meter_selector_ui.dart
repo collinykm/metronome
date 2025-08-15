@@ -32,7 +32,7 @@ class MeterSelectorUi extends StatelessWidget {
         top: 200,
         child: Container(
           width: 150,
-          height: 300,
+          height: 270,
           decoration: BoxDecoration(
             color: AppColors.background,
             borderRadius: BorderRadius.circular(12)
@@ -54,7 +54,7 @@ class MeterSelectorUi extends StatelessWidget {
                     for (int i = 0; i < beatsList.length; i++)
                       Text(beatsList[i].toString(),
                         style: TextStyles.body.copyWith(
-                          color: i == selectedBeatIndex ? AppColors.accent1 : AppColors.primary,
+                          color: i == selectedBeatIndex ? AppColors.accent2 : AppColors.primary,
                           fontSize: 20,
                         ),
                       )
@@ -77,7 +77,7 @@ class MeterSelectorUi extends StatelessWidget {
                     for (int i = 0; i < beatValueList.length; i++)
                       Text(beatValueList[i].toString(),
                         style: TextStyles.body.copyWith(
-                          color: i == selectedBeatValueIndex ? AppColors.accent1 : AppColors.primary,
+                          color: i == selectedBeatValueIndex ? AppColors.accent2 : AppColors.primary,
                           fontSize: 20,
                         ),
                       )

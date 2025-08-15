@@ -3,13 +3,15 @@ import "package:metronome_app/theme/colors.dart";
 
 class FilteredImage extends StatelessWidget {
   final String assetPath;
-  final double? width;
-  final double? height;
+  final double width;
+  final double height;
+  final Color color;
 
   const FilteredImage({
     required this.assetPath,
     required this.width,
     required this.height,
+    required this.color,
     super.key
   });
 
@@ -19,7 +21,7 @@ class FilteredImage extends StatelessWidget {
       assetPath,
       width: width,
       height: height,
-      color: AppColors.accent1,
+      color: color,
       colorBlendMode: BlendMode.srcIn,
     );
   }
