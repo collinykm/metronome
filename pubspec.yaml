@@ -50,6 +50,7 @@ dependencies:
   google_fonts: ^6.3.0
   flutter_inner_shadow: ^0.0.1
   phosphor_flutter: ^2.1.0
+  sound_generator: ^0.0.13
 
 dev_dependencies:
   flutter_test:

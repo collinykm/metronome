@@ -47,4 +47,16 @@ class AppIcons {
       PhosphorIconsRegular.equals,
       color: AppColors.primary
   );
+  static final plus = Icon(
+      PhosphorIconsRegular.plus,
+      color: AppColors.primary
+  );
+  static final minus = Icon(
+      PhosphorIconsRegular.minus,
+      color: AppColors.primary
+  );
+  static final tuningFork = Icon(
+      PhosphorIconsRegular.waveSine,
+      color: AppColors.primary
+  );
 }

@@ -13,6 +13,7 @@ import android.media.AudioTrack
 import io.flutter.plugin.common.EventChannel
 import kotlinx.coroutines.*
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.sin
 
 class MainActivity: FlutterActivity() {
@@ -22,6 +23,7 @@ class MainActivity: FlutterActivity() {
 
     private val metronomeScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val songScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val refNoteScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
 
     private var tempo = 120
@@ -44,6 +46,9 @@ class MainActivity: FlutterActivity() {
 
     val clicksList = arrayOf(silentClick, normalClick, accent2Click, accent3Click)
     //sets up some audio stuff
+
+
+    private var isRefNotePlaying = false
 
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine)  {
@@ -96,6 +101,18 @@ class MainActivity: FlutterActivity() {
                     subdivision = newSubdivision
                     result.success(null)
                 }
+                "playRefNote" -> {
+                    print("message received")
+                    refNoteScope.launch {
+                        val newFreq = call.arguments as Double
+                        print("$newFreq\n")
+                        playRefNote(newFreq)
+                    }
+                }
+                "pauseRefNote" -> {
+                    isRefNotePlaying = false
+                    result.success(false)
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -122,6 +139,81 @@ class MainActivity: FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         metronomeScope.cancel() // prevent leaks
+    }
+
+    fun generateSineSample(phase: Double, freq: Double, sampleRate: Int, volume: Double): Pair<Short, Double> {
+        val value = (Short.MAX_VALUE * volume * sin(phase)).toInt().toShort()
+        val phaseIncrement = 2 * Math.PI * freq / sampleRate
+        val newPhase = (phase + phaseIncrement) % (2 * Math.PI)
+        return value to newPhase
+    }
+    fun fadeOutBuffer(buffer: ShortArray, volume: Double) {
+        for (i in buffer.indices) {
+            val fade = 1.0 - (i.toDouble() / buffer.size)
+            buffer[i] = (buffer[i] * fade).toInt().toShort()
+        }
+    }
+    fun makeLoopBuffer(freq: Double, sampleRate: Int, volume: Double, minFrames: Int = 8192): ShortArray {
+        val cycles = Math.max(1, Math.round(minFrames * freq / sampleRate).toInt())
+        val frames = Math.max(1, Math.round(cycles * sampleRate / freq).toInt()) // ≈ minFrames
+        val amp = Short.MAX_VALUE * volume
+        val w = 2.0 * Math.PI * cycles / frames
+        val buf = ShortArray(frames)
+        for (i in 0 until frames) buf[i] = (amp * sin(w * i)).toInt().toShort()
+        buf[0] = 0 // exact zero at loop start
+        return buf
+    }
+
+    private fun playRefNote(freq: Double) {
+        if (isRefNotePlaying) {return}
+        isRefNotePlaying = true
+        val refNoteTrack = AudioTrack(
+            AudioManager.STREAM_MUSIC,
+            sampleRate,
+            AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            AudioTrack.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            ),
+            AudioTrack.MODE_STREAM
+        )
+        refNoteTrack.play()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val loop = makeLoopBuffer(freq, sampleRate, 0.8)
+                var idx = 0
+                var framesWritten = 0
+                val chunk = 1024
+
+                while (isRefNotePlaying) {
+                    val n = minOf(chunk, loop.size - idx)
+                    framesWritten += refNoteTrack.write(loop, idx, n)   // WRITE_BLOCKING by default
+                    idx += n
+                    if (idx == loop.size) idx = 0                       // loop boundary (phase 0, sample=0)
+                }
+
+                // Finish to loop boundary so the last non-zero naturally lands on 0 next.
+                if (idx != 0) {
+                    framesWritten += refNoteTrack.write(loop, idx, loop.size - idx)
+                    idx = 0
+                }
+
+                // Small zero pad (~5 ms) then drain so we don't cut queued samples.
+                val pad = ShortArray((sampleRate / 200).coerceAtLeast(1))
+                framesWritten += refNoteTrack.write(pad, 0, pad.size)
+
+                while (refNoteTrack.playState == android.media.AudioTrack.PLAYSTATE_PLAYING &&
+                    refNoteTrack.playbackHeadPosition < framesWritten) {
+                    Thread.sleep(2)
+                }
+            } finally {
+                refNoteTrack.stop()
+                refNoteTrack.release()
+            }
+        }
+
     }
 
 
@@ -190,8 +282,6 @@ class MainActivity: FlutterActivity() {
         }
         isSongPlaying = true
         val sectionsList = song["sectionsList"] as List<Map<String, Any>>
-
-
         val songTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
             sampleRate,
@@ -283,6 +373,15 @@ class MainActivity: FlutterActivity() {
             val fadeOut = 1.0 - i.toDouble() / length
             val amp = Short.MAX_VALUE * volume * fadeOut
             buffer[i] = (amp * sin(2 * PI * frequency * i / sampleRate)).toInt().toShort()
+        }
+        return buffer
+    }
+
+    fun generateSineWave(length: Int, sampleRate: Int, frequency: Double, volume: Double): ShortArray {
+        val buffer = ShortArray(length)
+        val amplitude = Short.MAX_VALUE * volume
+        for (i in 0 until length) {
+            buffer[i] = (amplitude * sin(2 * Math.PI * frequency * i / sampleRate)).toInt().toShort()
         }
         return buffer
     }

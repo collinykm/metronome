@@ -3,9 +3,13 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:sound_generator/sound_generator.dart';
+import 'package:sound_generator/waveTypes.dart';
 
 /// TunerProvider — keeps last reading when silent and guards callbacks
 /// after dispose so you won’t hit “used after being disposed”.
@@ -56,6 +60,66 @@ class TunerProvider with ChangeNotifier {
 
 
 
+  bool _refNoteVisible = false;
+  bool get refNoteVisible => _refNoteVisible;
+  void toggleRefNoteVisibility() {_refNoteVisible = !_refNoteVisible; notifyListeners();}
+
+  final _soundPlayer = FlutterSoundPlayer();
+  bool isPlaying = false;
+  final List _selectedNote = [9, 4];
+  //Note: index 0 represents index in notes list (or how many half notes), in this case 9 = A; index 1 represents octave
+  List get selectedNote => _selectedNote;
+  void updateSelectedNote(int noteIndex) {
+    _selectedNote[0] = noteIndex;
+    int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
+    double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+    print(freq);
+    notifyListeners();
+  }
+  void updateSelectedNoteOctave(int octave) {
+    octave = octave.clamp(1, 8);
+    _selectedNote[1] = octave;
+    notifyListeners();
+  }
+
+  final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
+
+
+  void initializePlayer() {
+
+    SoundGenerator.init(44100);
+    SoundGenerator.setDecibel(15);
+    SoundGenerator.setWaveType(waveTypes.SINUSOIDAL);
+    SoundGenerator.setCleanStart(true);
+  }
+  StreamController<Uint8List>? _controller;
+  Future<void> playReferenceFreq() async {
+    //getting the hertz
+    int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
+    double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+
+    isPlaying = true;
+    SoundGenerator.setFrequency(freq);
+    SoundGenerator.play();
+
+    //methodChannel.invokeMethod("playRefNote", freq);
+
+
+  }
+
+  Future<void> pausePlayer() async {
+    isPlaying = false;
+    SoundGenerator.stop();
+    //methodChannel.invokeMethod("pauseRefNote");
+  }
+
+  Future<void> disposePlayer() async {
+    isPlaying = false;
+    if (_soundPlayer.isOpen()) {
+      if (_soundPlayer.isPlaying) await _soundPlayer.stopPlayer();
+      await _soundPlayer.closePlayer();
+    }
+  }
 
 
 

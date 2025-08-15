@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:metronome_app/components/popup_container.dart";
+import "package:metronome_app/screens/tuner/reference_note.dart";
 import "package:metronome_app/screens/tuner/tuner_gauge.dart";
 import "package:metronome_app/screens/tuner/tuner_settings.dart";
 import "package:metronome_app/service/tuner_provider.dart";
@@ -56,6 +57,7 @@ class _TunerPageState extends State<TunerPage> {
                         const SizedBox(height: 80,),
                         TunerGauge(),
                         const SizedBox(height: 40,),
+                        //Note: Note Name, settings
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
@@ -72,7 +74,28 @@ class _TunerPageState extends State<TunerPage> {
                                 icon: AppIcons.sliders
                             ),
                           ],
-                        )
+                        ),
+
+                        //Note: Reference Note
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: tuner.toggleRefNoteVisibility,
+                              icon: AppIcons.tuningFork
+                            ),
+                            Column(
+                              children: [
+                                TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
+                                IconButton(
+                                  onPressed: () {
+                                    tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
+                                  },
+                                  icon: tuner.isPlaying ? AppIcons.pause : AppIcons.play
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
 
                       ],
                     ),
@@ -90,7 +113,20 @@ class _TunerPageState extends State<TunerPage> {
                         ),
                       ),
 
-                    TunerSettings(isVisible: tuner.settingsVisible)
+                    if (tuner.refNoteVisible)
+                      GestureDetector(
+                        onTap: () {
+                          tuner.toggleRefNoteVisibility();
+                        },
+                        child: Container(
+                          color: AppColors.shadowColor, // Semi-transparent background
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+
+                    TunerSettings(),
+                    ReferenceNote()
                   ]
               ),
             ),

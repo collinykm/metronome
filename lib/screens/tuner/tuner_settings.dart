@@ -8,8 +8,7 @@ import "package:provider/provider.dart";
 import "package:string_validator/string_validator.dart";
 
 class TunerSettings extends StatefulWidget {
-  final bool isVisible;
-  const TunerSettings({required this.isVisible, super.key});
+  const TunerSettings({super.key});
 
   @override
   State<TunerSettings> createState() => _TunerSettingsState();
