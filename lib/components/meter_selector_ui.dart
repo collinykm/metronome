@@ -1,4 +1,6 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/theme/colors.dart";
+import "package:metronome_app/theme/icons.dart";
 import "package:metronome_app/theme/typography.dart";
 
 class MeterSelectorUi extends StatelessWidget {
@@ -26,16 +28,19 @@ class MeterSelectorUi extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedPositioned(
         duration: Duration(milliseconds: 200),
-        right: isMeterPopupVisible ? 0 : -150,
+        right: isMeterPopupVisible ? 30 : -150,
         top: 200,
         child: Container(
           width: 150,
           height: 300,
-          color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12)
+          ),
           child: Row(
             children: [
               //select number of beats
-              Container(
+              SizedBox(
                 height: 200,
                 width: 50,
                 child: ListWheelScrollView(
@@ -49,7 +54,7 @@ class MeterSelectorUi extends StatelessWidget {
                     for (int i = 0; i < beatsList.length; i++)
                       Text(beatsList[i].toString(),
                         style: TextStyles.body.copyWith(
-                          color: i == selectedBeatIndex ? Colors.yellow : Colors.black,
+                          color: i == selectedBeatIndex ? AppColors.accent1 : AppColors.primary,
                           fontSize: 20,
                         ),
                       )
@@ -58,7 +63,7 @@ class MeterSelectorUi extends StatelessWidget {
               ),
 
               //select the value of a beat
-              Container(
+              SizedBox(
                 height: 200,
                 width: 50,
 
@@ -72,7 +77,7 @@ class MeterSelectorUi extends StatelessWidget {
                     for (int i = 0; i < beatValueList.length; i++)
                       Text(beatValueList[i].toString(),
                         style: TextStyles.body.copyWith(
-                          color: i == selectedBeatValueIndex ? Colors.yellow : Colors.black,
+                          color: i == selectedBeatValueIndex ? AppColors.accent1 : AppColors.primary,
                           fontSize: 20,
                         ),
                       )
@@ -80,7 +85,7 @@ class MeterSelectorUi extends StatelessWidget {
                 ),
               ),
 
-              IconButton(onPressed: toggleVisibility, icon: Icon(Icons.close))
+              IconButton(onPressed: toggleVisibility, icon: AppIcons.close)
 
             ],
           ),

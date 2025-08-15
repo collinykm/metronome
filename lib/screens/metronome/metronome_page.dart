@@ -2,6 +2,7 @@
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:metronome_app/components/filtered_image.dart';
 import 'package:metronome_app/components/play_button.dart';
 import 'package:metronome_app/components/selector_button.dart';
@@ -60,7 +61,10 @@ class _MetronomePageState extends State<MetronomePage> {
                           ),
                           //Note: meter selector
                           SelectorButton(
-                              onPress: metronome.toggleMeterVisibility,
+                              onPress: () {
+                                HapticFeedback.selectionClick();
+                                metronome.toggleMeterVisibility();
+                                },
                               content: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}")
                           ),
                         ],
@@ -156,7 +160,7 @@ class _MetronomePageState extends State<MetronomePage> {
                         metronome.toggleMeterVisibility();
                       },
                       child: Container(
-                        color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                        color: AppColors.shadowColor, // Semi-transparent background
                         width: double.infinity,
                         height: double.infinity,
                       ),
@@ -168,7 +172,7 @@ class _MetronomePageState extends State<MetronomePage> {
                         metronome.toggleSubdivisionVisibility();
                       },
                       child: Container(
-                        color: Colors.black.withOpacity(0.3), // Semi-transparent background
+                        color: AppColors.shadowColor, // Semi-transparent background
                         width: double.infinity,
                         height: double.infinity,
                       ),

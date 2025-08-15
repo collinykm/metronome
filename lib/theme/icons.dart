@@ -31,4 +31,8 @@ class AppIcons {
       PhosphorIconsFill.pause,
       color: AppColors.accent1
   );
+  static final close = Icon(
+    PhosphorIconsRegular.x,
+    color: AppColors.primary
+  );
 }
