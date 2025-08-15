@@ -40,15 +40,18 @@ class _TunerPageState extends State<TunerPage> {
       decoration: BoxDecoration(
         color: AppColors.background
       ),
-      child: Center(
-        child: Column(
-          children: [
-            const SizedBox(height: 40,),
-            TunerGauge(),
-            const SizedBox(height: 40,),
-            Text("${tuningOutputArray[0]}${tuningOutputArray[1]}")
-
-          ],
+      child: SafeArea(
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 40,),
+              TunerGauge(),
+              const SizedBox(height: 40,),
+              Text("${tuningOutputArray[0]}${tuningOutputArray[1]}")
+        
+            ],
+          ),
         ),
       ),
     );
