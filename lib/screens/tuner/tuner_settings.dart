@@ -1,5 +1,8 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_container.dart";
+import "package:metronome_app/components/subscript.dart";
 import "package:metronome_app/service/tuner_provider.dart";
 import "package:metronome_app/theme/colors.dart";
 import "package:metronome_app/theme/icons.dart";
@@ -47,111 +50,158 @@ class _TunerSettingsState extends State<TunerSettings> {
         }
        return PopupContainer(
          visible: tunerProvider.settingsVisible,
-         height: 400,
-         width: 280,
+         height: 520,
+         width: MediaQuery.of(context).size.width * 0.8,
          widget: Container(
            width: 280,
-           height: 600,
            padding: EdgeInsets.all(20),
            decoration: BoxDecoration(
                color: AppColors.background,
-               borderRadius: BorderRadius.circular(12)
+               borderRadius: BorderRadius.circular(20)
            ),
-           child: Column(
-             crossAxisAlignment: CrossAxisAlignment.start,
-             children: [
-               TitleText("Display"),
-
-               ListTile(
-                 title: BodyText("Flats: C D♭ D E♭ ..."),
-                 trailing: Radio<bool>(
-                   value: true,
-                   groupValue: tunerProvider.useFlats,
+           child: SingleChildScrollView(
+             padding: EdgeInsets.only(
+               bottom: MediaQuery.of(context).viewInsets.bottom, // shift above keyboard
+             ),
+             child: Column(
+               crossAxisAlignment: CrossAxisAlignment.start,
+               mainAxisAlignment: MainAxisAlignment.end,
+               children: [
+                 //Region: Display Section
+                 TitleText("Display"),
+                 RadioGroup<bool>(
                    onChanged: (value) {
                      tunerProvider.toggleFlats();
                    },
-                 ),
-               ),
-               ListTile(
-                 title: BodyText("Sharps: C C♯ D D♯ ..."),
-                 trailing: Radio<bool>(
-                   value: false,
                    groupValue: tunerProvider.useFlats,
-                   onChanged: (value) {
-                     tunerProvider.toggleFlats();
-                   },
-                 ),
-               ),
-               Divider(),
-               //Note: Transpose section
-               TitleText("Transpose"),
-               Row(
-                 children: [
-                   Column(
-                     mainAxisAlignment: MainAxisAlignment.center,
-                     crossAxisAlignment: CrossAxisAlignment.center,
+                   child: Column(
                      children: [
-                       BodyText("C"),
-                       Text("on your instrument", style: TextStyles.body.copyWith(fontSize: 12))
-                     ],
-                   ),
-                   AppIcons.rightArrow(),
-                   DropdownButton(
-                     value: tunerProvider.transposeSemitones,
-                     items: generateMenuList(),
-                     onChanged: (semiTones) {
-                       tunerProvider.updateTransposeSemitones(semiTones!);
-                     }
-                   ),
-                 ],
-               ),
-               Divider(),
-               //Note: A4 frequency
-               Column(
-                 children: [
-                   Row(
-                     children: [
-                       BodyText("A4"),
-                       AppIcons.equal(),
-                       Expanded(
-                         child: TextField(
-                           controller: a4FreqInput,
-                           style: TextStyles.body,
-                           keyboardType: TextInputType.number,
-                           onChanged: (str) {
-                             str = str.trim();
-                             if (str.isNumeric) {
-                               int freq = int.parse(str);
-                               tunerProvider.updateA4Freq(freq);
-                             } else {
-                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                 content: const BodyText(
-                                     "Input can only contain numbers"),
-                                 showCloseIcon: true,
-                                 duration: const Duration(seconds: 2),
-                                 backgroundColor: Colors.grey,
-                               ));
-                             }
-                           },
+                       ListTile(
+                         title: BodyText("Flats: C D♭ D E♭ ..."),
+                         trailing: Radio<bool>(
+                           value: true,
+                           activeColor: AppColors.accent2,
                          ),
-                       )
+                       ),
+                       ListTile(
+                         title: BodyText("Sharps: C C♯ D D♯ ..."),
+                         trailing: Radio<bool>(
+                           value: false,
+                           activeColor: AppColors.accent2,
+                         ),
+                       ),
                      ],
-                   ),
-                   TextButton(
-                     style: ButtonStyle(
-                       backgroundColor: WidgetStatePropertyAll(Colors.grey.shade500),
+                   )
+                 ),
+             
+                 Divider(),
+                 //Region: Transpose section
+                 const SizedBox(height: 10,),
+                 TitleText("Transpose"),
+                 const SizedBox(height: 10,),
+                 Column(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   crossAxisAlignment: CrossAxisAlignment.center,
+                   children: [
+                     BodyText("Your Instrument's C"),
+                     AppIcons.arrowDownUp(),
+                     Row(
+                       mainAxisAlignment: MainAxisAlignment.center,
+                       children: [
+                         BodyText("Concert  "),
+                         DropdownButton(
+                             value: tunerProvider.transposeSemitones,
+                             items: generateMenuList(),
+                             onChanged: (semiTones) {
+                               tunerProvider.updateTransposeSemitones(semiTones!);
+                             },
+                           dropdownColor: AppColors.background,
+                         ),
+                       ],
                      ),
-                     onPressed: () {tunerProvider.updateA4Freq(440);},
-                     child: Text(
-                       "Reset to default 440Hz",
-                       style: TextStyles.body.copyWith(fontSize: 10),
+                   ],
+                 ),
+             
+             
+             
+                 Divider(),
+                 //Note: A4 frequency
+                 Row(
+                   mainAxisSize: MainAxisSize.min,
+                   children: [
+                     Subscript(text: "A", subscript: "4", style: TextStyles.title),
+                     TitleText(" Frequency")
+                   ],
+                 ),
+                 Column(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   crossAxisAlignment: CrossAxisAlignment.center,
+                   children: [
+                     const SizedBox(height: 10,),
+                     Row(
+                       mainAxisAlignment: MainAxisAlignment.center,
+                       children: [
+                         AppIconButton(onPressed: () {
+                            HapticFeedback.lightImpact();
+                            tunerProvider.updateA4Freq(tunerProvider.A4_FREQ - 1);
+                           },
+                           icon: AppIcons.minus()
+                         ),
+                         Text("${tunerProvider.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 18),),
+                         AppIconButton(onPressed: () { HapticFeedback.lightImpact();tunerProvider.updateA4Freq(tunerProvider.A4_FREQ + 1);}, icon: AppIcons.plus()),
+                       ],
+                     ),
+                     const SizedBox(height: 20,),
+
+
+
+                     /*
+                     SizedBox(
+                       width: 30,
+                       child: TextField(
+                         controller: a4FreqInput,
+                         style: TextStyles.body,
+                         keyboardType: TextInputType.number,
+                         onChanged: (str) {
+                           str = str.trim();
+                           if (str.isNumeric) {
+                             int freq = int.parse(str);
+                             tunerProvider.updateA4Freq(freq);
+                           } else {
+                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                               content: const BodyText(
+                                   "Input can only contain numbers"),
+                               showCloseIcon: true,
+                               duration: const Duration(seconds: 2),
+                               backgroundColor: Colors.grey,
+                             ));
+                           }
+                         },
+                       ),
                      )
-                 )
-                 ],
-               )
 
+                      */
+                     TextButton(
+                       style: TextButton.styleFrom(
+                         backgroundColor: Colors.grey.shade300,
+                         shape: RoundedRectangleBorder(
+                           borderRadius: BorderRadiusGeometry.circular(12)
+                         )
 
-             ],
+                       ),
+                       onPressed: () {tunerProvider.updateA4Freq(440);},
+                       child: Text(
+                         "Reset to default 440Hz",
+                         style: TextStyles.body.copyWith(fontSize: 12),
+                       )
+                     )
+                   ],
+                 ),
+
+             
+             
+               ],
+             ),
            ),
          ),
        );

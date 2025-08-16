@@ -63,6 +63,7 @@ class _NavBarAppState extends State<NavBarApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       bottomNavigationBar: Container(
           decoration: BoxDecoration(
             border: Border(

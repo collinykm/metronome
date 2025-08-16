@@ -54,4 +54,8 @@ class AppIcons {
   static Icon tuningFork({double? size, Color? color}) =>
       Icon(PhosphorIconsRegular.waveSine,
           size: size, color: color ?? AppColors.primary);
+
+  static Icon arrowDownUp({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.arrowsDownUp,
+          size: size, color: color ?? AppColors.primary);
 }
