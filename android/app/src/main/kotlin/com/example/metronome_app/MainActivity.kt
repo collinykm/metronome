@@ -49,6 +49,7 @@ class MainActivity: FlutterActivity() {
 
 
     private var isRefNotePlaying = false
+    private var refFreq = 440.0
 
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine)  {
@@ -104,14 +105,24 @@ class MainActivity: FlutterActivity() {
                 "playRefNote" -> {
                     print("message received")
                     refNoteScope.launch {
-                        val newFreq = call.arguments as Double
-                        print("$newFreq\n")
-                        playRefNote(newFreq)
+                        playRefNote()
                     }
                 }
+                "updateRefNote" -> {
+                    val newFreq = call.arguments as Double
+                    refFreq = newFreq
+                    currentFreq = newFreq
+                    println("\n\n currentFreq has been set to $currentFreq")
+
+                    result.success(null)
+                    
+                }
                 "pauseRefNote" -> {
+                    shouldStop = true
                     isRefNotePlaying = false
-                    result.success(false)
+                    audioJob?.cancel()
+                    audioJob = null
+                    result.success(null)
                 }
                 else -> {
                     result.notImplemented()
@@ -145,54 +156,23 @@ class MainActivity: FlutterActivity() {
 
 
 
-    private fun generateSineWaveBuffer(
-        bufferSize: Int,
-        frequency: Double,
-        volume: Float,
-        startPhase: Double
-    ): Pair<ShortArray, Double> {
-        val buffer = ShortArray(bufferSize)
-        val phaseIncrement = 2.0 * PI * frequency / 44100
-        var currentPhase = startPhase
 
-        for (i in buffer.indices) {
-            val sample = (sin(currentPhase) * volume * Short.MAX_VALUE).toInt()
-            buffer[i] = sample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-            currentPhase += phaseIncrement
+    private var audioJob: Job? = null
+    private var refNoteTrack: AudioTrack? = null
 
-            // Keep phase in reasonable range to prevent floating point precision issues
-            if (currentPhase >= 2.0 * PI) {
-                currentPhase -= 2.0 * PI
-            }
-        }
+    // Make these volatile so they can be safely updated from other threads
+    @Volatile private var currentFreq = 0.0
+    @Volatile private var shouldStop = false
 
-        return Pair(buffer, currentPhase)
-    }
+    fun playRefNote() {
+        if (isRefNotePlaying) return
 
-    /**
-     * Applies fade-out to prevent pops when stopping
-     */
-    private fun applyFadeOut(buffer: ShortArray, fadeStartSample: Int) {
-        val fadeLength = buffer.size - fadeStartSample
-        if (fadeLength <= 0) return
-
-        for (i in fadeStartSample until buffer.size) {
-            val fadeProgress = (i - fadeStartSample).toFloat() / fadeLength
-            val multiplier = 1.0f - fadeProgress // Linear fade from 1.0 to 0.0
-            buffer[i] = (buffer[i] * multiplier).toInt().toShort()
-        }
-    }
-
-
-
-
-
-
-
-    private fun playRefNote(freq: Double) {
-        if (isRefNotePlaying) {return}
         isRefNotePlaying = true
-        val refNoteTrack = AudioTrack(
+        shouldStop = false
+        currentFreq = refFreq
+
+        // Create AudioTrack once
+        refNoteTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
             sampleRate,
             AudioFormat.CHANNEL_OUT_MONO,
@@ -204,38 +184,43 @@ class MainActivity: FlutterActivity() {
             ),
             AudioTrack.MODE_STREAM
         )
-        refNoteTrack.play()
-        CoroutineScope(Dispatchers.Default).launch {
+
+        refNoteTrack?.play()
+
+        // Single coroutine that runs until stopped
+        audioJob = CoroutineScope(Dispatchers.Default).launch {
             try {
                 var phase = 0.0
-                val angularIncrement = 2 * Math.PI * freq / sampleRate
-                val initialVolume = 1.0
-                var remainingFadeSamples = 0
-                val fadeDurationSamples = 2205
-                val bufferSize = sampleRate / 100
-                while (true) {
-                    if (!isRefNotePlaying && remainingFadeSamples == 0) {
-                        remainingFadeSamples = fadeDurationSamples
+                val bufferSize = sampleRate / 100 // 10ms buffers
+                val volume = 0.3f
+                println("\n\n playing frequency $currentFreq\n\n")
+
+                while (!shouldStop) {
+                    // Calculate phase increment based on current frequency
+                    val phaseIncrement = 2.0 * Math.PI * currentFreq / sampleRate
+
+                    val buffer = ShortArray(bufferSize)
+                    for (i in buffer.indices) {
+                        val sample = (Math.sin(phase) * volume * Short.MAX_VALUE).toInt()
+                        buffer[i] = sample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                        phase += phaseIncrement
+
+                        // Keep phase in reasonable range
+                        if (phase >= 2.0 * Math.PI) {
+                            phase -= 2.0 * Math.PI
+                        }
                     }
-                    val effectiveSize = if (remainingFadeSamples in 1 until bufferSize) remainingFadeSamples else bufferSize
-                    val buffer = ShortArray(effectiveSize)
-                    for (i in 0 until effectiveSize) {
-                        val amp = if (remainingFadeSamples > 0) ((remainingFadeSamples - 1).toDouble() / fadeDurationSamples * initialVolume) else initialVolume
-                        buffer[i] = (Math.sin(phase) * amp * 32767).toInt().toShort()
-                        phase += angularIncrement
-                        if (remainingFadeSamples > 0) remainingFadeSamples--
-                    }
-                    refNoteTrack.write(buffer, 0, effectiveSize)
-                    if (remainingFadeSamples == 0 && !isRefNotePlaying) break
+
+                    refNoteTrack?.write(buffer, 0, bufferSize)
                 }
             } finally {
-                refNoteTrack.stop()
-                refNoteTrack.release()
+                refNoteTrack?.stop()
+                refNoteTrack?.release()
+                refNoteTrack = null
+                isRefNotePlaying = false
             }
         }
-
     }
-
 
     private fun playMetronome() {
         if (isMetronomePlaying) {

@@ -3,60 +3,55 @@ import 'package:metronome_app/theme/colors.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AppIcons {
-  static final metronome = Icon(
-      PhosphorIconsRegular.metronome,
-      size: 20,
-      color: AppColors.primary,
-  );
-  static final tuner = Icon(
-    PhosphorIconsRegular.gauge,
-    size: 20,
-    color: AppColors.primary,
-  );
-  static final song = Icon(
-    PhosphorIconsRegular.musicNotes,
-    size: 20,
-    color: AppColors.primary,
-  );
-  static final settings = Icon(
-    PhosphorIconsRegular.gear,
-    size: 20,
-    color: AppColors.primary,
-  );
-  static final play = Icon(
-    PhosphorIconsFill.play,
-    color: AppColors.accent1
-  );
-  static final pause = Icon(
-      PhosphorIconsFill.pause,
-      color: AppColors.accent1
-  );
-  static final close = Icon(
-    PhosphorIconsRegular.x,
-    color: AppColors.primary
-  );
-  static final sliders = Icon(
-      PhosphorIconsRegular.sliders,
-      color: AppColors.primary
-  );
-  static final rightArrow = Icon(
-      PhosphorIconsRegular.arrowRight,
-      color: AppColors.primary
-  );
-  static final equal = Icon(
-      PhosphorIconsRegular.equals,
-      color: AppColors.primary
-  );
-  static final plus = Icon(
-      PhosphorIconsRegular.plus,
-      color: AppColors.primary
-  );
-  static final minus = Icon(
-      PhosphorIconsRegular.minus,
-      color: AppColors.primary
-  );
-  static final tuningFork = Icon(
-      PhosphorIconsRegular.waveSine,
-      color: AppColors.primary
-  );
+  static Icon metronome({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.metronome,
+          size: size ?? 20, color: color ?? AppColors.primary);
+
+  static Icon tuner({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.gauge,
+          size: size ?? 20, color: color ?? AppColors.primary);
+
+  static Icon song({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.musicNotes,
+          size: size ?? 20, color: color ?? AppColors.primary);
+
+  static Icon settings({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.gear,
+          size: size ?? 20, color: color ?? AppColors.primary);
+
+  static Icon play({double? size, Color? color}) =>
+      Icon(PhosphorIconsFill.play,
+          size: size, color: color ?? AppColors.accent1);
+
+  static Icon pause({double? size, Color? color}) =>
+      Icon(PhosphorIconsFill.pause,
+          size: size, color: color ?? AppColors.accent1);
+
+  static Icon close({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.x,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon sliders({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.sliders,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon rightArrow({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.arrowRight,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon equal({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.equals,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon plus({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.plus,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon minus({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.minus,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon tuningFork({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.waveSine,
+          size: size, color: color ?? AppColors.primary);
 }

@@ -73,6 +73,7 @@ class TunerProvider with ChangeNotifier {
     _selectedNote[0] = noteIndex;
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
     double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+    print("\n just updated note, now frequency is $freq");
     methodChannel.invokeMethod("updateRefNote", freq);
     notifyListeners();
   }
@@ -99,9 +100,9 @@ class TunerProvider with ChangeNotifier {
 
     isPlaying = true;
     notifyListeners();
+    print("\n sending over a frequency of $freq \n");
 
-
-    methodChannel.invokeMethod("playRefNote", freq);
+    methodChannel.invokeMethod("playRefNote");
 
 
   }

@@ -95,7 +95,7 @@ class _TunerSettingsState extends State<TunerSettings> {
                        Text("on your instrument", style: TextStyles.body.copyWith(fontSize: 12))
                      ],
                    ),
-                   AppIcons.rightArrow,
+                   AppIcons.rightArrow(),
                    DropdownButton(
                      value: tunerProvider.transposeSemitones,
                      items: generateMenuList(),
@@ -112,7 +112,7 @@ class _TunerSettingsState extends State<TunerSettings> {
                    Row(
                      children: [
                        BodyText("A4"),
-                       AppIcons.equal,
+                       AppIcons.equal(),
                        Expanded(
                          child: TextField(
                            controller: a4FreqInput,

@@ -57,12 +57,12 @@ class _ReferenceNoteState extends State<ReferenceNote> {
                     //Note: go down an octave
                     IconButton(
                       onPressed: () {tunerProvider.updateSelectedNoteOctave(tunerProvider.selectedNote[1] - 1);},
-                      icon: AppIcons.minus
+                      icon: AppIcons.minus()
                     ),
                     BodyText("${tunerProvider.selectedNote[1]}"),
                     IconButton(
                         onPressed: () {tunerProvider.updateSelectedNoteOctave(tunerProvider.selectedNote[1] + 1);},
-                        icon: AppIcons.plus
+                        icon: AppIcons.plus()
                     ),
 
                   ],

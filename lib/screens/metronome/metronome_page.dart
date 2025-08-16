@@ -89,7 +89,7 @@ class _MetronomePageState extends State<MetronomePage> {
                                 }
                               },
                               diameter: 140,
-                              icon: metronome.isPlaying ? AppIcons.pause : AppIcons.play
+                              icon: metronome.isPlaying ? AppIcons.pause() : AppIcons.play()
                           ),
                           //Note: Tap Tempo
                           Padding(

@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:metronome_app/screens/metronome/metronome_page.dart';
 import 'package:metronome_app/screens/songs/all_songs_page.dart';
@@ -84,10 +85,10 @@ class _NavBarAppState extends State<NavBarApp> {
 
 
           destinations: <Widget>[
-            NavigationDestination(icon: AppIcons.metronome, label: "Metronome"),
-            NavigationDestination(icon: AppIcons.tuner, label: "Tuner"),
-            NavigationDestination(icon: AppIcons.song, label: "Songs"),
-            NavigationDestination(icon: AppIcons.settings, label: "Settings"),
+            NavigationDestination(icon: AppIcons.metronome(), label: "Metronome"),
+            NavigationDestination(icon: AppIcons.tuner(), label: "Tuner"),
+            NavigationDestination(icon: AppIcons.song(), label: "Songs"),
+            NavigationDestination(icon: AppIcons.settings(), label: "Settings"),
           ],
         ),
       ),

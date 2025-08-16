@@ -62,7 +62,7 @@ class SubdivisionSelectorUI extends StatelessWidget {
               ),
 
 
-              IconButton(onPressed: toggleVisibility, icon: AppIcons.close)
+              IconButton(onPressed: toggleVisibility, icon: AppIcons.close())
 
             ],
           ),

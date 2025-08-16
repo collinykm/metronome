@@ -1,5 +1,9 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_container.dart";
+import "package:metronome_app/components/suberscript.dart";
+import "package:metronome_app/components/subscript.dart";
+import "package:metronome_app/components/superscript.dart";
 import "package:metronome_app/screens/tuner/reference_note.dart";
 import "package:metronome_app/screens/tuner/tuner_gauge.dart";
 import "package:metronome_app/screens/tuner/tuner_settings.dart";
@@ -55,25 +59,56 @@ class _TunerPageState extends State<TunerPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const SizedBox(height: 80,),
-                        TunerGauge(),
-                        const SizedBox(height: 40,),
-                        //Note: Note Name, settings
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            BodyText("A4 = ${tuner.A4_FREQ}"),
-                            Text(
-                              "${tuningOutputArray[0]}${tuningOutputArray[1]}",
-                              style: TextStyles.title.copyWith(
-                                  fontSize: 40
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 32),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              //this row is for A4 = 440hz
+                              Row(
+                                spacing: 1,
+                                children: [
+                                  Subscript(text: "A", subscript: "4", style: TextStyles.body.copyWith(fontSize: 14)),
+                                  AppIcons.equal(size: 12, color: AppColors.text),
+                                  Text("${tuner.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 12),)
+                                ],
                               ),
-                            ),
+                              AppIconButton(
+                                  onPressed: tuner.toggleSettingsVisibility,
+                                  icon: AppIcons.sliders()
+                              ),
+                            ],
+                          ),
+                        ),
+                        TunerGauge(),
 
-                            IconButton(
-                                onPressed: tuner.toggleSettingsVisibility,
-                                icon: AppIcons.sliders
-                            ),
-                          ],
+                        //Note: Note Name, settings
+
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Colors.black, width: 2),
+                              bottom: BorderSide(color: Colors.black, width: 2)
+                            )
+                          ),
+                          height: 180,
+                          child: Row(
+
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+
+
+                              Superscript(
+                                text: "${tuningOutputArray[0][0]}",
+                                superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
+                                style: TextStyles.title.copyWith(
+                                  fontSize: 70
+                              )),
+
+
+                            ],
+                          ),
                         ),
 
                         //Note: Reference Note
@@ -81,7 +116,7 @@ class _TunerPageState extends State<TunerPage> {
                           children: [
                             IconButton(
                               onPressed: tuner.toggleRefNoteVisibility,
-                              icon: AppIcons.tuningFork
+                              icon: AppIcons.tuningFork()
                             ),
                             Column(
                               children: [
@@ -90,7 +125,7 @@ class _TunerPageState extends State<TunerPage> {
                                   onPressed: () {
                                     tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
                                   },
-                                  icon: tuner.isPlaying ? AppIcons.pause : AppIcons.play
+                                  icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
                                 ),
                               ],
                             )
