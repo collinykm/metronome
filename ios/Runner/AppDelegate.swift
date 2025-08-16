@@ -114,9 +114,15 @@ import AVFoundation
             case "updateRefNote":
                 let newFreq = call.arguments as! Double
                 refFreq = newFreq
+                print("Received new frequency \(newFreq)")
                 if (isRefNotePlaying) {
-                    
+                    // Just update the increment - no need to stop/start
+                    let twoPi = 2.0 * Double.pi
+                    let sr: Double = 44100.0  // Use the same sample rate you set in playRefNote
+                    currentInc = twoPi * Double(refFreq) / sr
+                    print("Updated frequency on the fly")
                 }
+              
                 result(nil)
             
             case "pauseRefNote":
@@ -140,13 +146,15 @@ import AVFoundation
     
     
     private var refLoopBuffer: AVAudioPCMBuffer?
+    private var currentInc: Double = 0
+    private var phase: Double = 0
 
     func playRefNote() {
         guard refFreq > 0 else { return }
 
         // Use the mixer’s format to avoid any resample/jitter.
         let mixFmt = audioEngine.mainMixerNode.outputFormat(forBus: 0)
-        let sr = mixFmt.sampleRate
+        let sr = 44100.0
         let ch = Int(mixFmt.channelCount)
         let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32,
                                 sampleRate: sr, channels: mixFmt.channelCount,
@@ -163,12 +171,11 @@ import AVFoundation
 
         // Tone state
         let twoPi = 2.0 * Double.pi
-        let inc = twoPi * refFreq / sr
-        var phase = 0.0
+        currentInc = twoPi * Double(refFreq) / Double(sr)
         let framesPerBuf = max(4096, Int(sr * 0.06)) // ~60–90 ms, avoids underflows nicely
         let cap = AVAudioFrameCount(framesPerBuf)
         let amp: Float = 0.3
-
+        print("refFreq: \(refFreq), sampleRate: \(sr), inc: \(currentInc)")
         isRefNotePlaying = true
         refNotePlayer.play()
 
@@ -187,7 +194,7 @@ import AVFoundation
 
             for i in 0..<n {
                 let s = amp * Float(sin(phase))
-                phase += inc
+                phase += currentInc
                 if phase >= twoPi { phase -= twoPi }
                 for c in 0..<ch { fcd[c][i] = s }
             }

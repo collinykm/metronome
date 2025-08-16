@@ -64,7 +64,7 @@ class TunerProvider with ChangeNotifier {
   bool get refNoteVisible => _refNoteVisible;
   void toggleRefNoteVisibility() {_refNoteVisible = !_refNoteVisible; notifyListeners();}
 
-  final _soundPlayer = FlutterSoundPlayer();
+
   bool isPlaying = false;
   final List _selectedNote = [9, 4];
   //Note: index 0 represents index in notes list (or how many half notes), in this case 9 = A; index 1 represents octave
@@ -73,13 +73,16 @@ class TunerProvider with ChangeNotifier {
     _selectedNote[0] = noteIndex;
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
     double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
-    print(freq);
+    methodChannel.invokeMethod("updateRefNote", freq);
     notifyListeners();
   }
   void updateSelectedNoteOctave(int octave) {
     octave = octave.clamp(1, 8);
     _selectedNote[1] = octave;
     notifyListeners();
+    int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
+    double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+    methodChannel.invokeMethod("updateRefNote", freq);
   }
 
   final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
@@ -111,10 +114,7 @@ class TunerProvider with ChangeNotifier {
 
   Future<void> disposePlayer() async {
     isPlaying = false;
-    if (_soundPlayer.isOpen()) {
-      if (_soundPlayer.isPlaying) await _soundPlayer.stopPlayer();
-      await _soundPlayer.closePlayer();
-    }
+    notifyListeners();
   }
 
 
