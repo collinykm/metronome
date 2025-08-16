@@ -141,28 +141,53 @@ class MainActivity: FlutterActivity() {
         metronomeScope.cancel() // prevent leaks
     }
 
-    fun generateSineSample(phase: Double, freq: Double, sampleRate: Int, volume: Double): Pair<Short, Double> {
-        val value = (Short.MAX_VALUE * volume * sin(phase)).toInt().toShort()
-        val phaseIncrement = 2 * Math.PI * freq / sampleRate
-        val newPhase = (phase + phaseIncrement) % (2 * Math.PI)
-        return value to newPhase
-    }
-    fun fadeOutBuffer(buffer: ShortArray, volume: Double) {
+
+
+
+
+    private fun generateSineWaveBuffer(
+        bufferSize: Int,
+        frequency: Double,
+        volume: Float,
+        startPhase: Double
+    ): Pair<ShortArray, Double> {
+        val buffer = ShortArray(bufferSize)
+        val phaseIncrement = 2.0 * PI * frequency / 44100
+        var currentPhase = startPhase
+
         for (i in buffer.indices) {
-            val fade = 1.0 - (i.toDouble() / buffer.size)
-            buffer[i] = (buffer[i] * fade).toInt().toShort()
+            val sample = (sin(currentPhase) * volume * Short.MAX_VALUE).toInt()
+            buffer[i] = sample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+            currentPhase += phaseIncrement
+
+            // Keep phase in reasonable range to prevent floating point precision issues
+            if (currentPhase >= 2.0 * PI) {
+                currentPhase -= 2.0 * PI
+            }
+        }
+
+        return Pair(buffer, currentPhase)
+    }
+
+    /**
+     * Applies fade-out to prevent pops when stopping
+     */
+    private fun applyFadeOut(buffer: ShortArray, fadeStartSample: Int) {
+        val fadeLength = buffer.size - fadeStartSample
+        if (fadeLength <= 0) return
+
+        for (i in fadeStartSample until buffer.size) {
+            val fadeProgress = (i - fadeStartSample).toFloat() / fadeLength
+            val multiplier = 1.0f - fadeProgress // Linear fade from 1.0 to 0.0
+            buffer[i] = (buffer[i] * multiplier).toInt().toShort()
         }
     }
-    fun makeLoopBuffer(freq: Double, sampleRate: Int, volume: Double, minFrames: Int = 8192): ShortArray {
-        val cycles = Math.max(1, Math.round(minFrames * freq / sampleRate).toInt())
-        val frames = Math.max(1, Math.round(cycles * sampleRate / freq).toInt()) // ≈ minFrames
-        val amp = Short.MAX_VALUE * volume
-        val w = 2.0 * Math.PI * cycles / frames
-        val buf = ShortArray(frames)
-        for (i in 0 until frames) buf[i] = (amp * sin(w * i)).toInt().toShort()
-        buf[0] = 0 // exact zero at loop start
-        return buf
-    }
+
+
+
+
+
+
 
     private fun playRefNote(freq: Double) {
         if (isRefNotePlaying) {return}
@@ -182,31 +207,26 @@ class MainActivity: FlutterActivity() {
         refNoteTrack.play()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                val loop = makeLoopBuffer(freq, sampleRate, 0.8)
-                var idx = 0
-                var framesWritten = 0
-                val chunk = 1024
-
-                while (isRefNotePlaying) {
-                    val n = minOf(chunk, loop.size - idx)
-                    framesWritten += refNoteTrack.write(loop, idx, n)   // WRITE_BLOCKING by default
-                    idx += n
-                    if (idx == loop.size) idx = 0                       // loop boundary (phase 0, sample=0)
-                }
-
-                // Finish to loop boundary so the last non-zero naturally lands on 0 next.
-                if (idx != 0) {
-                    framesWritten += refNoteTrack.write(loop, idx, loop.size - idx)
-                    idx = 0
-                }
-
-                // Small zero pad (~5 ms) then drain so we don't cut queued samples.
-                val pad = ShortArray((sampleRate / 200).coerceAtLeast(1))
-                framesWritten += refNoteTrack.write(pad, 0, pad.size)
-
-                while (refNoteTrack.playState == android.media.AudioTrack.PLAYSTATE_PLAYING &&
-                    refNoteTrack.playbackHeadPosition < framesWritten) {
-                    Thread.sleep(2)
+                var phase = 0.0
+                val angularIncrement = 2 * Math.PI * freq / sampleRate
+                val initialVolume = 1.0
+                var remainingFadeSamples = 0
+                val fadeDurationSamples = 2205
+                val bufferSize = sampleRate / 100
+                while (true) {
+                    if (!isRefNotePlaying && remainingFadeSamples == 0) {
+                        remainingFadeSamples = fadeDurationSamples
+                    }
+                    val effectiveSize = if (remainingFadeSamples in 1 until bufferSize) remainingFadeSamples else bufferSize
+                    val buffer = ShortArray(effectiveSize)
+                    for (i in 0 until effectiveSize) {
+                        val amp = if (remainingFadeSamples > 0) ((remainingFadeSamples - 1).toDouble() / fadeDurationSamples * initialVolume) else initialVolume
+                        buffer[i] = (Math.sin(phase) * amp * 32767).toInt().toShort()
+                        phase += angularIncrement
+                        if (remainingFadeSamples > 0) remainingFadeSamples--
+                    }
+                    refNoteTrack.write(buffer, 0, effectiveSize)
+                    if (remainingFadeSamples == 0 && !isRefNotePlaying) break
                 }
             } finally {
                 refNoteTrack.stop()

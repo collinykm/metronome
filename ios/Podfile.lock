@@ -1,48 +1,63 @@
 PODS:
-  - audio_session (0.0.1):
-    - Flutter
+  - AudioKit (4.11.2):
+    - AudioKit/Core (= 4.11.2)
+    - AudioKit/UI (= 4.11.2)
+  - AudioKit/Core (4.11.2)
+  - AudioKit/UI (4.11.2):
+    - AudioKit/Core
   - Flutter (1.0.0)
-  - flutter_sound (9.21.1):
+  - flutter_audio_capture (1.1.4):
     - Flutter
-    - flutter_sound_core (= 9.21.1)
-  - flutter_sound_core (9.21.1)
+  - flutter_sound (9.28.0):
+    - Flutter
+    - flutter_sound_core (= 9.28.0)
+  - flutter_sound_core (9.28.0)
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
+  - sound_generator (0.0.11):
+    - AudioKit (< 5)
+    - Flutter
 
 DEPENDENCIES:
-  - audio_session (from `.symlinks/plugins/audio_session/ios`)
   - Flutter (from `Flutter`)
+  - flutter_audio_capture (from `.symlinks/plugins/flutter_audio_capture/ios`)
   - flutter_sound (from `.symlinks/plugins/flutter_sound/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - sound_generator (from `.symlinks/plugins/sound_generator/ios`)
 
 SPEC REPOS:
   trunk:
+    - AudioKit
     - flutter_sound_core
 
 EXTERNAL SOURCES:
-  audio_session:
-    :path: ".symlinks/plugins/audio_session/ios"
   Flutter:
     :path: Flutter
+  flutter_audio_capture:
+    :path: ".symlinks/plugins/flutter_audio_capture/ios"
   flutter_sound:
     :path: ".symlinks/plugins/flutter_sound/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  sound_generator:
+    :path: ".symlinks/plugins/sound_generator/ios"
 
 SPEC CHECKSUMS:
-  audio_session: 32a33910dd5bb35d54297e4b50006481071f196b
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_sound: 45e2f57d2bddfa2b5a2197e1fa13077130e3e6c6
-  flutter_sound_core: 8936f1d9a6f6c6022d68bde4bfb68500d6c03b76
+  AudioKit: 57cc61d708f085763a031e5c3f87adae21dc4b59
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_audio_capture: 93ef890ac148f093d168c33258c3a161b8f5e04b
+  flutter_sound: 82aba29055d6feba684d08906e0623217b87bcd3
+  flutter_sound_core: 427465f72d07ab8c3edbe8ffdde709ddacd3763c
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  sound_generator: 2f46955faeb04d161e0f574f690cf92a61086d8b
 
-PODFILE CHECKSUM: a57f30d18f102dd3ce366b1d62a55ecbef2158e5
+PODFILE CHECKSUM: 38ff06bd06d7b43eb9cc5e124f8da357152ac123
 
 COCOAPODS: 1.16.2

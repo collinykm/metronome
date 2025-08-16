@@ -17,6 +17,8 @@ import AVFoundation
     private var subdivision = [1, 1]
     private var isMetronomePlaying = false
     private var isSongPlaying = false
+    private var isRefNotePlaying = false
+    private var refFreq = 440.0
     
     
     
@@ -25,27 +27,23 @@ import AVFoundation
     var clickSamples: Int {
         return Int(sampleRate * clickDurationMs / 1000.0)
     }
-    var accent3Click: AVAudioPCMBuffer {
-        generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 2000.0, volume: 1.0)
+    var accent3Click: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 2000.0, volume: 1.0)
     }
-    var accent2Click: AVAudioPCMBuffer {
-        generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1600.0, volume: 0.8)
+    var accent2Click: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1600.0, volume: 0.8)
     }
-    var normalClick: AVAudioPCMBuffer {
-        generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.6)
+    var normalClick: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.6)
     }
-    var silentClick: AVAudioPCMBuffer {
-        generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.0)
+    var silentClick: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.0)
         
     }
     var clicksList: [AVAudioPCMBuffer] {
         return [silentClick, normalClick, accent2Click, accent3Click]
-        
     }
     
     let audioEngine = AVAudioEngine()
     let metronomePlayer = AVAudioPlayerNode()
     let songPlayer = AVAudioPlayerNode()
+    let refNotePlayer = AVAudioPlayerNode()
     
     
     
@@ -106,6 +104,24 @@ import AVFoundation
                 let newSubdivision = call.arguments as! [Int]
                 subdivision = newSubdivision
                 result(nil)
+            
+            case "playRefNote":
+                Task {
+                    await self.playRefNote()
+                }
+                result(nil)
+                
+            case "updateRefNote":
+                let newFreq = call.arguments as! Double
+                refFreq = newFreq
+                if (isRefNotePlaying) {
+                    
+                }
+                result(nil)
+            
+            case "pauseRefNote":
+                pauseRefNote()
+                result(nil)
                 
                 
                 
@@ -121,6 +137,78 @@ import AVFoundation
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
+    
+    
+    private var refLoopBuffer: AVAudioPCMBuffer?
+
+    func playRefNote() {
+        guard refFreq > 0 else { return }
+
+        // Use the mixer’s format to avoid any resample/jitter.
+        let mixFmt = audioEngine.mainMixerNode.outputFormat(forBus: 0)
+        let sr = mixFmt.sampleRate
+        let ch = Int(mixFmt.channelCount)
+        let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+                                sampleRate: sr, channels: mixFmt.channelCount,
+                                interleaved: false)!
+
+        // Ensure node is in the graph once, then clear it for a fresh run.
+        if refNotePlayer.engine == nil {
+            audioEngine.attach(refNotePlayer)
+            audioEngine.connect(refNotePlayer, to: audioEngine.mainMixerNode, format: fmt)
+        }
+        if !audioEngine.isRunning { try? audioEngine.start() }
+        refNotePlayer.stop()
+        refNotePlayer.reset()
+
+        // Tone state
+        let twoPi = 2.0 * Double.pi
+        let inc = twoPi * refFreq / sr
+        var phase = 0.0
+        let framesPerBuf = max(4096, Int(sr * 0.06)) // ~60–90 ms, avoids underflows nicely
+        let cap = AVAudioFrameCount(framesPerBuf)
+        let amp: Float = 0.3
+
+        isRefNotePlaying = true
+        refNotePlayer.play()
+
+        func scheduleNext() {
+            if !isRefNotePlaying {
+                DispatchQueue.main.async {
+                    self.refNotePlayer.pause()
+                    self.refNotePlayer.reset()
+                }
+                return
+            }
+            guard let b = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: cap) else { return }
+            b.frameLength = cap
+            let n = Int(cap)
+            let fcd = b.floatChannelData!
+
+            for i in 0..<n {
+                let s = amp * Float(sin(phase))
+                phase += inc
+                if phase >= twoPi { phase -= twoPi }
+                for c in 0..<ch { fcd[c][i] = s }
+            }
+            refNotePlayer.scheduleBuffer(b, completionHandler: scheduleNext)
+        }
+
+        // Prime a few buffers so it never starves
+        for _ in 0..<6 { scheduleNext() }
+    }
+
+    // Call this to stop (pop is okay per your note)
+    func pauseRefNote() {
+        isRefNotePlaying = false
+    }
+
+
+
+
+
+    
+    
     
     
     

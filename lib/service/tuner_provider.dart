@@ -8,8 +8,8 @@ import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:sound_generator/sound_generator.dart';
-import 'package:sound_generator/waveTypes.dart';
+
+
 
 /// TunerProvider — keeps last reading when silent and guards callbacks
 /// after dispose so you won’t hit “used after being disposed”.
@@ -87,10 +87,6 @@ class TunerProvider with ChangeNotifier {
 
   void initializePlayer() {
 
-    SoundGenerator.init(44100);
-    SoundGenerator.setDecibel(15);
-    SoundGenerator.setWaveType(waveTypes.SINUSOIDAL);
-    SoundGenerator.setCleanStart(true);
   }
   StreamController<Uint8List>? _controller;
   Future<void> playReferenceFreq() async {
@@ -99,18 +95,18 @@ class TunerProvider with ChangeNotifier {
     double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
 
     isPlaying = true;
-    SoundGenerator.setFrequency(freq);
-    SoundGenerator.play();
+    notifyListeners();
 
-    //methodChannel.invokeMethod("playRefNote", freq);
+
+    methodChannel.invokeMethod("playRefNote", freq);
 
 
   }
 
   Future<void> pausePlayer() async {
     isPlaying = false;
-    SoundGenerator.stop();
-    //methodChannel.invokeMethod("pauseRefNote");
+    notifyListeners();
+    methodChannel.invokeMethod("pauseRefNote");
   }
 
   Future<void> disposePlayer() async {
