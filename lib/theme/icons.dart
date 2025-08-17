@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import 'package:metronome_app/theme/colors.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AppIcons {
   static Icon metronome({double? size, Color? color}) =>
@@ -51,9 +52,14 @@ class AppIcons {
       Icon(PhosphorIconsRegular.minus,
           size: size, color: color ?? AppColors.primary);
 
-  static Icon tuningFork({double? size, Color? color}) =>
-      Icon(PhosphorIconsRegular.waveSine,
-          size: size, color: color ?? AppColors.primary);
+  static SvgPicture tuningFork({double? size, Color? color}) =>
+      SvgPicture.asset(
+        "assets/icons/tuningFork.svg",
+          width: size ?? 24,
+          height: size ?? 24,
+          colorFilter: ColorFilter.mode(color ?? AppColors.primary, BlendMode.srcIn),
+      );
+
 
   static Icon arrowDownUp({double? size, Color? color}) =>
       Icon(PhosphorIconsRegular.arrowsDownUp,
