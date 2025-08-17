@@ -55,134 +55,134 @@ class _TunerPageState extends State<TunerPage> {
             ),
             child: Center(
               child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 80,),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 32),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              //this row is for A4 = 440hz
-                              Row(
-                                spacing: 1,
-                                children: [
-                                  Subscript(text: "A", subscript: "4", style: TextStyles.body.copyWith(fontSize: 14)),
-                                  AppIcons.equal(size: 12, color: AppColors.text),
-                                  Text("${tuner.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 12),)
-                                ],
-                              ),
-                              AppIconButton(
-                                  onPressed: tuner.toggleSettingsVisibility,
-                                  icon: AppIcons.sliders()
-                              ),
-                            ],
-                          ),
+                fit: StackFit.expand,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 80,),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 32),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            //this row is for A4 = 440hz
+                            Row(
+                              spacing: 1,
+                              children: [
+                                Subscript(text: "A", subscript: "4", style: TextStyles.body.copyWith(fontSize: 14)),
+                                AppIcons.equal(size: 12, color: AppColors.text),
+                                Text("${tuner.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 12),)
+                              ],
+                            ),
+                            AppIconButton(
+                                onPressed: tuner.toggleSettingsVisibility,
+                                icon: AppIcons.sliders()
+                            ),
+                          ],
                         ),
-                        TunerGauge(),
+                      ),
+                      TunerGauge(),
 
-                        //Note: Note Name, settings
+                      //Note: Note Name, settings
 
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: Colors.black, width: 2),
-                              bottom: BorderSide(color: Colors.black, width: 2)
-                            )
-                          ),
-                          height: 180,
-                          child: Row(
-
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-
-
-                              Superscript(
-                                text: "${tuningOutputArray[0][0]}",
-                                superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
-                                style: TextStyles.title.copyWith(
-                                  fontSize: 70
-                              )),
-
-
-                            ],
-                          ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: Colors.black, width: 2),
+                            bottom: BorderSide(color: Colors.black, width: 2)
+                          )
                         ),
+                        height: 180,
+                        child: Row(
 
-                        //Note: Reference Note
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              TitleText("Reference Note"),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  AppIconButton(
-                                      onPressed: tuner.toggleRefNoteVisibility,
-                                      icon: AppIcons.tuningFork(size: 60, color: AppColors.text)
-                                  ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      //TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
-                                      Suberscript(
-                                        text: tuner.noteNames[tuner.selectedNote[0]][0],
-                                        superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
-                                        subscript: "${tuner.selectedNote[1]}",
-                                        style: TextStyles.title.copyWith(fontSize: 40)
-                                      ),
-
-                                      IconButton(
-                                          onPressed: () {
-                                            tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
-                                          },
-                                          icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
-                                      ),
-                                    ],
-                                  )
-                                ],
-                                                      ),
-                            ],
-                          ))
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
 
 
-                      ],
+                            Superscript(
+                              text: "${tuningOutputArray[0][0]}",
+                              superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
+                              style: TextStyles.title.copyWith(
+                                fontSize: 70
+                            )),
+
+
+                          ],
+                        ),
+                      ),
+
+                      //Note: Reference Note
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TitleText("Reference Note"),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                AppIconButton(
+                                    onPressed: tuner.toggleRefNoteVisibility,
+                                    icon: AppIcons.tuningFork(size: 60, color: AppColors.text)
+                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    //TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
+                                    Suberscript(
+                                      text: tuner.noteNames[tuner.selectedNote[0]][0],
+                                      superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
+                                      subscript: "${tuner.selectedNote[1]}",
+                                      style: TextStyles.title.copyWith(fontSize: 40)
+                                    ),
+
+                                    IconButton(
+                                        onPressed: () {
+                                          tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
+                                        },
+                                        icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
+                                    ),
+                                  ],
+                                )
+                              ],
+                                                    ),
+                          ],
+                        ))
+
+
+                    ],
+                  ),
+
+
+                  if (tuner.settingsVisible)
+                    GestureDetector(
+                      onTap: () {
+                        tuner.toggleSettingsVisibility();
+                      },
+                      child: Container(
+                        color: AppColors.shadowColor, // Semi-transparent background
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
                     ),
 
-
-                    if (tuner.settingsVisible)
-                      GestureDetector(
-                        onTap: () {
-                          tuner.toggleSettingsVisibility();
-                        },
-                        child: Container(
-                          color: AppColors.shadowColor, // Semi-transparent background
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
+                  if (tuner.refNoteVisible)
+                    GestureDetector(
+                      onTap: () {
+                        tuner.toggleRefNoteVisibility();
+                      },
+                      child: Container(
+                        color: AppColors.shadowColor, // Semi-transparent background
+                        width: double.infinity,
+                        height: double.infinity,
                       ),
+                    ),
 
-                    if (tuner.refNoteVisible)
-                      GestureDetector(
-                        onTap: () {
-                          tuner.toggleRefNoteVisibility();
-                        },
-                        child: Container(
-                          color: AppColors.shadowColor, // Semi-transparent background
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
-                      ),
-
-                    TunerSettings(),
-                    ReferenceNote()
-                  ]
+                  TunerSettings(),
+                  ReferenceNote()
+                ]
               ),
             ),
           );

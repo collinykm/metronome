@@ -2,7 +2,7 @@ import "package:flutter/material.dart";
 import "package:metronome_app/theme/colors.dart";
 class AppTextButton extends StatelessWidget {
   final VoidCallback onPressed;
-  final Icon textWidget;
+  final Widget textWidget;
   const AppTextButton({
     required this.onPressed,
     required this.textWidget,

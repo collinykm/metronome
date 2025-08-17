@@ -65,6 +65,10 @@ class AppIcons {
       Icon(PhosphorIconsRegular.arrowsDownUp,
           size: size, color: color ?? AppColors.primary);
 
+  static Icon arrowLeft({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.arrowLeft,
+          size: size, color: color ?? AppColors.primary);
+
   static Icon search({double? size, Color? color}) =>
       Icon(PhosphorIconsRegular.magnifyingGlass,
           size: size, color: color ?? AppColors.primary);
@@ -76,4 +80,8 @@ class AppIcons {
   static Icon add({double? size, Color? color}) =>
       Icon(PhosphorIconsBold.plus,
           size: size, color: color ?? AppColors.primary,);
+
+  static Icon trash({double? size, Color? color}) =>
+      Icon(PhosphorIconsBold.trash,
+        size: size, color: color ?? AppColors.primary,);
 }

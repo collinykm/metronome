@@ -4,7 +4,15 @@ import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
 class AccentSelector extends StatefulWidget {
-  const AccentSelector({super.key});
+  final double? totalWidth;
+  final double? height;
+  const AccentSelector(
+    {
+      this.totalWidth,
+      this.height,
+      super.key
+    }
+  );
   
   @override
   State<AccentSelector> createState() => _AccentSelectorState();
@@ -47,14 +55,12 @@ class _AccentSelectorState extends State<AccentSelector> {
       return const SizedBox.shrink();
     }
 
-    double screenWidth = MediaQuery.of(context).size.width;
-    double accentSelectorWidth = (screenWidth - 2*30 - (accentsList.length - 1) * 20) / accentsList.length;
-    // the 30 represents the margin on the sides, 20 represents the gap between each selector (so each has a margin of 10)
-
     return AccentSelectorUi(
-        handlePress: updateAccent,
-        accentsList: accentsList,
-        beepingIndicatorList: beepingIndicatorList
+      handlePress: updateAccent,
+      accentsList: accentsList,
+      beepingIndicatorList: beepingIndicatorList,
+      totalWidth: widget.totalWidth,
+      height: widget.height,
     );
   }
 

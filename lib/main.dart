@@ -42,6 +42,13 @@ void main() async{
     ],
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        textSelectionTheme: TextSelectionThemeData(
+            cursorColor: AppColors.text,         // blinking cursor
+            selectionColor: AppColors.accent1, // highlight background
+            selectionHandleColor: AppColors.primary // 👈 the dropper/handle color
+        ),
+      ),
       home: NavBarApp()
       ),
     ),
@@ -89,7 +96,7 @@ class _NavBarAppState extends State<NavBarApp> {
             NavigationDestination(icon: AppIcons.metronome(), label: "Metronome"),
             NavigationDestination(icon: AppIcons.tuner(), label: "Tuner"),
             NavigationDestination(icon: AppIcons.song(), label: "Songs"),
-            NavigationDestination(icon: AppIcons.settings(), label: "Settings"),
+            //NavigationDestination(icon: AppIcons.settings(), label: "Settings"),
           ],
         ),
       ),
@@ -98,7 +105,7 @@ class _NavBarAppState extends State<NavBarApp> {
         MetronomePage(),
         TunerPage(),
         AllSongsPage(),
-        BodyText("Settings Page"),
+        //BodyText("Settings Page"),
 
       ][selectedPageIndex],
     );

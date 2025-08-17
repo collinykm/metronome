@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:metronome_app/theme/colors.dart";
 
 import "../theme/typography.dart";
 
@@ -24,7 +25,17 @@ Future showInputDialogue({
             controller: controller,
             decoration: InputDecoration(
               hintText: hintText,
+              label: BodyText("Search"),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12)
+              ),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primary)
+              ),
             ),
+
+            style: TextStyles.body,
           ),
           actions: [
             //cancel button

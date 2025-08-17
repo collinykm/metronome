@@ -7,20 +7,23 @@ class AccentSelectorUi extends StatelessWidget {
   final void Function(int) handlePress;
   final List<int> accentsList;
   final List<bool> beepingIndicatorList;
-
+  final double? totalWidth;
+  final double? height;
 
   const AccentSelectorUi({
     required this.handlePress,
     required this.accentsList,
     required this.beepingIndicatorList,
+    this.totalWidth,
+    this.height,
     super.key
   });
 
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double accentSelectorWidth = (screenWidth - 2*30 - (accentsList.length - 1) * 20) / accentsList.length;
+    double screenWidth = totalWidth != null ? totalWidth! : MediaQuery.of(context).size.width;
+    double accentSelectorWidth = ((screenWidth - 2*30 - (accentsList.length - 1) * 20) / accentsList.length).clamp(0, 73);
     // the 30 represents the margin on the sides, 20 represents the gap between each selector (so each has a margin of 10)
 
     return Row(
@@ -33,7 +36,7 @@ class AccentSelectorUi extends StatelessWidget {
             child: GestureDetector(
               onTap: () => handlePress(i),
               child: CustomPaint(
-                size: Size(accentSelectorWidth, 100),
+                size: Size(accentSelectorWidth, height != null ? height! : 100),
                 painter: AccentPainter(accent: accentsList[i], isFlashing: beepingIndicatorList[i]),
               ),
             )
