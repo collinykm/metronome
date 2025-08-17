@@ -64,4 +64,16 @@ class AppIcons {
   static Icon arrowDownUp({double? size, Color? color}) =>
       Icon(PhosphorIconsRegular.arrowsDownUp,
           size: size, color: color ?? AppColors.primary);
+
+  static Icon search({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.magnifyingGlass,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon edit({double? size, Color? color}) =>
+      Icon(PhosphorIconsRegular.pencil,
+          size: size, color: color ?? AppColors.primary);
+
+  static Icon add({double? size, Color? color}) =>
+      Icon(PhosphorIconsBold.plus,
+          size: size, color: color ?? AppColors.primary,);
 }
