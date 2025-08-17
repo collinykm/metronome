@@ -1,3 +1,5 @@
+import "dart:math";
+
 import "package:flutter/material.dart";
 import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_container.dart";
@@ -112,25 +114,43 @@ class _TunerPageState extends State<TunerPage> {
                         ),
 
                         //Note: Reference Note
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: tuner.toggleRefNoteVisibility,
-                              icon: AppIcons.tuningFork()
-                            ),
-                            Column(
-                              children: [
-                                TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
-                                IconButton(
-                                  onPressed: () {
-                                    tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
-                                  },
-                                  icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TitleText("Reference Note"),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  AppIconButton(
+                                      onPressed: tuner.toggleRefNoteVisibility,
+                                      icon: AppIcons.tuningFork(size: 60, color: AppColors.text)
+                                  ),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      //TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
+                                      Suberscript(
+                                        text: tuner.noteNames[tuner.selectedNote[0]][0],
+                                        superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
+                                        subscript: "${tuner.selectedNote[1]}",
+                                        style: TextStyles.title.copyWith(fontSize: 40)
+                                      ),
+
+                                      IconButton(
+                                          onPressed: () {
+                                            tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
+                                          },
+                                          icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
+                                      ),
+                                    ],
+                                  )
+                                ],
+                                                      ),
+                            ],
+                          ))
+
 
                       ],
                     ),

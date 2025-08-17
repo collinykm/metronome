@@ -21,7 +21,7 @@ import 'package:provider/provider.dart';
 
 void main() async{
 
-
+  //debugPaintSizeEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationDocumentsDirectory();
   await Hive.initFlutter();

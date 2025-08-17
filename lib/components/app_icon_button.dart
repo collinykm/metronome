@@ -2,7 +2,7 @@ import "package:flutter/material.dart";
 import "package:metronome_app/theme/colors.dart";
 class AppIconButton extends StatelessWidget {
   final VoidCallback onPressed;
-  final Icon icon;
+  final Widget icon;
   const AppIconButton({
     required this.onPressed,
     required this.icon,
@@ -13,7 +13,10 @@ class AppIconButton extends StatelessWidget {
     return IconButton(
       onPressed: onPressed, icon: icon,
       style: IconButton.styleFrom(
-        highlightColor: AppColors.accent1
+        highlightColor: AppColors.shadowColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadiusGeometry.circular(12)
+        )
       )
     );
   }

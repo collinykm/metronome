@@ -53,7 +53,6 @@ class _TunerSettingsState extends State<TunerSettings> {
          height: 520,
          width: MediaQuery.of(context).size.width * 0.8,
          widget: Container(
-           width: 280,
            padding: EdgeInsets.all(20),
            decoration: BoxDecoration(
                color: AppColors.background,
