@@ -3,11 +3,13 @@ import "package:metronome_app/theme/colors.dart";
 
 class SelectorButton extends StatelessWidget {
   final VoidCallback onPress;
+  final double? height;
   final Widget content;
 
   const SelectorButton({
     required this.onPress,
     required this.content,
+    this.height,
     super.key
   });
 
@@ -16,8 +18,8 @@ class SelectorButton extends StatelessWidget {
     return GestureDetector(
       onTap: onPress,
       child: Container(
-        width: 80,
-        height: 64,
+        width: height != null ? height! * 1.25 : 80, //aspect ratio
+        height: height?? 64,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: AppColors.primary,

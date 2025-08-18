@@ -21,7 +21,7 @@ class BodyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: TextStyles.body,);
+    return Text(text, style: TextStyles.body.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(14)),);
   }
 }
 
@@ -31,6 +31,6 @@ class TitleText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: TextStyles.title,);
+    return Text(text, style: TextStyles.title.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(20)),);
   }
 }

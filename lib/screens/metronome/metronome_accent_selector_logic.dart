@@ -6,7 +6,8 @@ import "package:metronome_app/service/songs_provider.dart";
 import "package:provider/provider.dart";
 
 class AccentSelector extends StatefulWidget {
-  const AccentSelector({super.key});
+  final double? height;
+  const AccentSelector({this.height, super.key});
 
 
   @override
@@ -48,7 +49,8 @@ class _AccentSelectorState extends State<AccentSelector> {
     return AccentSelectorUi(
       handlePress: updateAccent,
       accentsList: accentsList,
-      beepingIndicatorList: beepingIndicatorList
+      beepingIndicatorList: beepingIndicatorList,
+      height: widget.height,
     );
   }
 

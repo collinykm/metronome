@@ -1,5 +1,6 @@
 
 import 'dart:ffi';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,157 +33,178 @@ class _MetronomePageState extends State<MetronomePage> {
 
     return Scaffold(
 
-      body: Consumer<MetronomeProvider>(
-        builder: (context, metronome, child) {
-          return Container(
-            color: AppColors.background,
-            child: Center(
-              child: Stack(
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40,),
-                      AccentSelector(),
-
-                      const SizedBox(height: 40,),
-
-                      //Note: subdivision and meter selector
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double maxHeight = constraints.maxHeight;
+          final double maxWidth = constraints.maxWidth;
+          final double gap = maxHeight > 800 ? maxHeight * 0.045 : maxHeight * 0.03;
+          print("maxheight: $maxHeight, maxwidth: $maxWidth");
+          return Consumer<MetronomeProvider>(
+            builder: (context, metronome, child) {
+              return Container(
+                color: AppColors.background,
+                child: Stack(
+                  children: [
+                    SafeArea(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 80,
                         children: [
-                          //Note: subdivision button
-                          SelectorButton(
-                              onPress: metronome.toggleSubdivisionVisibility,
-                              content: FilteredImage(assetPath: metronome.subdivision.imagePath, height: 30, width: 50, color: AppColors.accent1,),
+                          SizedBox(height: gap / 2,),
+                          AccentSelector(height: (maxHeight * 0.125).clamp(60, 100),),
+
+                          SizedBox(height: gap,),
+
+                          //Note: subdivision and meter selector
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            spacing: maxWidth * 0.19,
+                            children: [
+                              //Note: subdivision button
+                              SelectorButton(
+                                onPress: metronome.toggleSubdivisionVisibility,
+                                height: (maxHeight * 0.076).clamp(52, 68),
+                                content: FilteredImage(assetPath: metronome.subdivision.imagePath, height: 30, width: 50, color: AppColors.accent1,),
+                              ),
+                              //Note: meter selector
+                              SelectorButton(
+                                  height: (maxHeight * 0.076).clamp(52, 68),
+                                  onPress: () {
+                                    HapticFeedback.selectionClick();
+                                    metronome.toggleMeterVisibility();
+                                  },
+                                  content: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}")
+                              ),
+                            ],
                           ),
-                          //Note: meter selector
-                          SelectorButton(
-                              onPress: () {
-                                HapticFeedback.selectionClick();
-                                metronome.toggleMeterVisibility();
-                                },
-                              content: BodyText("${metronome.meter[0]} / ${metronome.meter[1]}")
-                          ),
-                        ],
-                      ),
 
 
-                      const SizedBox(height: 40,),
+                          SizedBox(height: gap,),
 
-                      //Note: Play and Tap button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        spacing: 60,
-                        children: [
-                          //Note: Play Button
-                          PlayButton(
-                              onPress: () {
-                                if (metronome.isPlaying){
-                                  metronome.Pause();
-                                } else {
-                                  metronome.Play();
-                                }
-                              },
-                              diameter: 140,
-                              icon: metronome.isPlaying ? AppIcons.pause() : AppIcons.play()
-                          ),
-                          //Note: Tap Tempo
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 14.0),
-                            child: GestureDetector(
-                              onTapDown: (details) {
-                                final currentTime = DateTime.now();
-                                //if there's been 3 seconds of no taps
-                                if (tapTimes.isNotEmpty) {
-                                  if (currentTime.difference(tapTimes.last) >
-                                      Duration(seconds: 3)) {
-                                    tapTimes.clear();
-                                  }
-                                }
-                                tapTimes.add(currentTime);
-                                //if there's at least 2 entries, calculate tempo
-                                if (tapTimes.length >= 2) {
-                                  final timeDifference = currentTime.difference(tapTimes[tapTimes.length - 2]);
-                                  final tempo = (60.0 / (timeDifference.inMicroseconds / 1000000.0)).toInt();
-                                  metronome.updateTempo(tempo);
-                                }
+                          //Note: Play and Tap button
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            spacing: maxWidth * 0.14,
+                            children: [
+                              //Note: Play Button
+                              PlayButton(
+                                  onPress: () {
+                                    if (metronome.isPlaying){
+                                      metronome.Pause();
+                                    } else {
+                                      metronome.Play();
+                                    }
+                                  },
+                                  diameter: (maxHeight * 0.18).clamp(110, 140),
+                                  icon: metronome.isPlaying ? AppIcons.pause() : AppIcons.play()
+                              ),
+                              //Note: Tap Tempo
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 14.0),
+                                child: GestureDetector(
+                                    onTapDown: (details) {
+                                      final currentTime = DateTime.now();
+                                      //if there's been 3 seconds of no taps
+                                      if (tapTimes.isNotEmpty) {
+                                        if (currentTime.difference(tapTimes.last) >
+                                            Duration(seconds: 3)) {
+                                          tapTimes.clear();
+                                        }
+                                      }
+                                      tapTimes.add(currentTime);
+                                      //if there's at least 2 entries, calculate tempo
+                                      if (tapTimes.length >= 2) {
+                                        final timeDifference = currentTime.difference(tapTimes[tapTimes.length - 2]);
+                                        final tempo = (60.0 / (timeDifference.inMicroseconds / 1000000.0)).toInt();
+                                        metronome.updateTempo(tempo);
+                                      }
 
 
-                              },
-                              child: Container(
-                                width: 113,
-                                height: 60,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.shadowColor,
-                                      blurRadius: 4,
-                                      offset: Offset(4, 4),
-                                      spreadRadius: 0,
-                                    ),
-                                    BoxShadow(
+                                    },
+                                    child: Container(
+                                        width: (maxWidth * 0.28).clamp(0, 114),
+                                        height: (maxWidth * 0.28).clamp(0, 114) * 0.53,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.shadowColor,
+                                              blurRadius: 4,
+                                              offset: Offset(4, 4),
+                                              spreadRadius: 0,
+                                            ),
+                                            BoxShadow(
 
+                                            )
+                                          ],
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: BodyText("Tap")
                                     )
-                                  ],
-                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: BodyText("Tap")
                               )
-                            ),
+                            ],
+                          ),
+
+
+                          //Note: tempo selector
+                          SizedBox(height: gap / 3,),
+                          TitleText("${metronome.tempo.toString()} BPM"),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: LayoutBuilder(
+                                builder: (context, bottomConstraints) {
+                                  print("bottomConstraints height: ${bottomConstraints.maxHeight}");
+                                  return TempoKnob(diameter: bottomConstraints.maxHeight - 15,);
+                                },
+                              ),
+                            )
                           )
+
+
+
+
                         ],
                       ),
-
-
-                      //Note: tempo selector
-                      const SizedBox(height: 0,),
-                      BodyText(metronome.tempo.toString()),
-                      BodyText("BPM"),
-                      TempoKnob(),
-
-                      const SizedBox(height: 20,),
-
-                    ],
-                  ),
-
-                  if (metronome.isMeterPopupVisible)
-                    GestureDetector(
-                      onTap: () {
-                        metronome.toggleMeterVisibility();
-                      },
-                      child: Container(
-                        color: AppColors.shadowColor, // Semi-transparent background
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
                     ),
 
-                  if (metronome.isSubdivisionPopupVisible)
-                    GestureDetector(
-                      onTap: () {
-                        metronome.toggleSubdivisionVisibility();
-                      },
-                      child: Container(
-                        color: AppColors.shadowColor, // Semi-transparent background
-                        width: double.infinity,
-                        height: double.infinity,
+                    if (metronome.isMeterPopupVisible)
+                      GestureDetector(
+                        onTap: () {
+                          metronome.toggleMeterVisibility();
+                        },
+                        child: Container(
+                          color: AppColors.shadowColor, // Semi-transparent background
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
                       ),
-                    ),
 
-                  MeterSelector(),
-                  SubdivisionSelector()
-                ],
-              ),
-            ),
+                    if (metronome.isSubdivisionPopupVisible)
+                      GestureDetector(
+                        onTap: () {
+                          metronome.toggleSubdivisionVisibility();
+                        },
+                        child: Container(
+                          color: AppColors.shadowColor, // Semi-transparent background
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+
+                    MeterSelector(),
+                    SubdivisionSelector()
+                  ],
+                ),
+              );
+            },
+
           );
-        },
+        }
 
       ),
     );

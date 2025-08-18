@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:metronome_app/screens/metronome/metronome_page.dart';
 import 'package:metronome_app/screens/songs/all_songs_page.dart';
@@ -29,6 +30,10 @@ void main() async{
   Hive.registerAdapter(SectionAdapter());
   Hive.registerAdapter(SubdivisionAdapter());
   await Hive.openBox('songsBox');
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
 
 
