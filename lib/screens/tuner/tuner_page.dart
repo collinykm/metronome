@@ -1,8 +1,10 @@
+import "dart:io";
 import "dart:math";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:metronome_app/components/app_icon_button.dart";
+import "package:metronome_app/components/app_text_button.dart";
 import "package:metronome_app/components/popup_container.dart";
 import "package:metronome_app/components/suberscript.dart";
 import "package:metronome_app/components/subscript.dart";
@@ -36,9 +38,9 @@ class _TunerPageState extends State<TunerPage> {
 
   void initRecorder() async {
     await tunerProvider.initializeRecorder();
-    if (tunerProvider.needsPriming) {
+    if (tunerProvider.needsPriming && Platform.isIOS) {
       await MethodChannel('metronome_method_channel').invokeMethod("playRefNote");
-      await Future.delayed(Duration(milliseconds: 10));
+      await Future.delayed(Duration(milliseconds: 20));
       await MethodChannel('metronome_method_channel').invokeMethod("pauseRefNote");
       tunerProvider.needsPriming = false;
     }
@@ -101,74 +103,83 @@ class _TunerPageState extends State<TunerPage> {
                             ],
                           ),
                         ),
-                        TunerGauge(size: maxWidth > 400 ? (maxWidth * 0.88).clamp(0, 360) : (maxWidth * 0.88).clamp(0, 300),),
 
                         //Note: Note Name
-
-                        Container(
-                          decoration: BoxDecoration(
-                              border: Border(
-                                  top: BorderSide(color: Colors.black, width: 2),
-                                  bottom: BorderSide(color: Colors.black, width: 2)
-                              )
-                          ),
-                          height: 120,
-                          child: Row(
-
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-
-
-                              Superscript(
-                                  text: "${tuningOutputArray[0][0]}",
-                                  superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
-                                  style: TextStyles.title.copyWith(
-                                      fontSize: 70
-                                  )),
-
-
-                            ],
-                          ),
-                        ),
-
-                        //Note: Reference Note
                         Expanded(
+                          child: SingleChildScrollView(
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                TitleText("Reference Note"),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    AppIconButton(
-                                        onPressed: tuner.toggleRefNoteVisibility,
-                                        icon: AppIcons.tuningFork(size: 60, color: AppColors.text)
+                                TunerGauge(size: maxWidth > 400 ? (maxWidth * 0.88).clamp(0, 360) : (maxWidth * 0.88).clamp(0, 300),),
+                                Container(
+                                  decoration: BoxDecoration(
+                                      border: Border(
+                                          top: BorderSide(color: Colors.black, width: 2),
+                                          bottom: BorderSide(color: Colors.black, width: 2)
+                                      )
+                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: maxHeight > 750 ? 20 : 0),
+                                  child: Center(
+                                    child: Superscript(
+                                        text: "${tuningOutputArray[0][0]}",
+                                        superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
+                                        style: TextStyles.title.copyWith(
+                                            fontSize:  (MediaQuery.of(context).textScaler.scale(80)).clamp(0, 80)
+                                        )
                                     ),
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        //TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
-                                        Suberscript(
-                                            text: tuner.noteNames[tuner.selectedNote[0]][0],
-                                            superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
-                                            subscript: "${tuner.selectedNote[1]}",
-                                            style: TextStyles.title.copyWith(fontSize: 40)
-                                        ),
 
-                                        IconButton(
-                                            onPressed: () {
-                                              tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
-                                            },
-                                            icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
-                                        ),
-                                      ],
-                                    )
-                                  ],
+
+
+                                  ),
                                 ),
+                                SizedBox(height: gap),
+                                //Note: Reference Note
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    TitleText("Reference Note"),
+                                    SizedBox(height: gap/3,),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        AppIconButton(
+                                            onPressed: tuner.toggleRefNoteVisibility,
+                                            icon: AppIcons.tuningFork(size: (maxHeight * 0.1) .clamp(0, 60), color: AppColors.text)
+                                        ),
+                                        Transform.translate(
+                                          offset: Offset(0, Platform.isAndroid ? - (MediaQuery.of(context).textScaler.scale(40)) / 8 : 0),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+
+                                              GestureDetector(
+                                                onTap: tuner.toggleRefNoteVisibility,
+                                                child: Suberscript(
+                                                    text: tuner.noteNames[tuner.selectedNote[0]][0],
+                                                    superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
+                                                    subscript: "${tuner.selectedNote[1]}",
+                                                    style: TextStyles.title.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(50))
+                                                ),
+                                              ),
+
+                                              IconButton(
+                                                  onPressed: () {
+                                                    tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
+                                                  },
+                                                  icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ],
+                                )
                               ],
-                            ))
+                            ),
+                          ),
+                        )
+
 
 
                       ],

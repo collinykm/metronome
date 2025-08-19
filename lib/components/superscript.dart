@@ -1,3 +1,5 @@
+import "dart:io";
+
 import "package:flutter/material.dart";
 import "package:metronome_app/theme/colors.dart";
 
@@ -14,29 +16,24 @@ class Superscript extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-            text,
-            style: style
-        ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-                superscript,
-                style:  style.copyWith(fontSize: superscript == "♭" ? style.fontSize! * 0.9 : style.fontSize! * 0.65)
+    return Transform.translate(
+      offset: Offset( superscript != "" ? (style.fontSize! * (Platform.isIOS ? 0.2 : 0.05)) : 0,  0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(text, style: style),
+          Transform.translate(
+            offset: Offset(- style.fontSize! * (Platform.isIOS ? 0.2 : 0.05), - style.fontSize! * (Platform.isIOS ? 0.3 : 0.44)), // Superscript offset
+            child: Text(
+              superscript,
+              style: style.copyWith(
+                fontSize: style.fontSize! * (Platform.isIOS ?  0.7 : 0.9) * (superscript == "♯" ? 0.76 : 1),
+              ),
             ),
-            //filler
-            Text(
-                "",
-                style:  style.copyWith(fontSize: superscript == "♭" ? style.fontSize! * 0.8 : style.fontSize! * 0.6)
-            )
-          ],
-        )
-
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
