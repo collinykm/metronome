@@ -29,9 +29,9 @@ import AVFoundation
     }
     var accent3Click: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 2000.0, volume: 1.0)
     }
-    var accent2Click: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1600.0, volume: 0.8)
+    var accent2Click: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1600.0, volume: 0.9)
     }
-    var normalClick: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.6)
+    var normalClick: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.8)
     }
     var silentClick: AVAudioPCMBuffer { generateClick(sampleCount: clickSamples, sampleRate: sampleRate, frequency: 1000.0, volume: 0.0)
         
@@ -44,8 +44,8 @@ import AVFoundation
     let metronomePlayer = AVAudioPlayerNode()
     let songPlayer = AVAudioPlayerNode()
     let refNotePlayer = AVAudioPlayerNode()
-    
-    
+    let fmt = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)!
+    let session = AVAudioSession.sharedInstance()
     
     override func application(
         _ application: UIApplication,
@@ -58,15 +58,50 @@ import AVFoundation
         methodChannel.setMethodCallHandler { [weak self] call, result in
             guard let self = self else { return }
             switch call.method {
+            case "initAudio":
+                audioEngine.attach(refNotePlayer)
+                audioEngine.attach(metronomePlayer)
+                audioEngine.attach(songPlayer)
+                audioEngine.mainMixerNode.outputVolume = 1.0
+
+                
+                do {
+                    try session.setCategory(.playAndRecord,
+                                            mode: .measurement,
+                                            options: [.defaultToSpeaker, .allowBluetooth])
+                    try session.setActive(true)
+    
+
+                    audioEngine.connect(refNotePlayer, to: audioEngine.mainMixerNode, format: fmt)
+                    audioEngine.connect(metronomePlayer, to: audioEngine.mainMixerNode, format: fmt)
+                    audioEngine.connect(songPlayer, to: audioEngine.mainMixerNode, format: fmt)
+
+                    try audioEngine.start()
+                    try session.overrideOutputAudioPort(.speaker)
+                    print("Engine running? \(audioEngine.isRunning)")
+                    print(session.category, session.mode)
+
+                    print("Audio route: \(session.currentRoute.outputs.map { $0.portName })")
+                    print("Audio route: \(session.currentRoute.outputs.map { $0.portName })")
+                } catch {
+                    print("Audio init failed: \(error)")
+                }
+                result(nil)
+
+                
+            
             case "playMetronome":
                 Task {
                     await self.playMetronome()
+                    result(nil)
                 }
                 
-                result(nil)
+               
             case "pauseMetronome":
                 isMetronomePlaying = false
-                metronomePlayer.reset()
+                metronomePlayer.stop()
+                
+                
                 currentPulse = 0
                 print("\n\n________________")
                 result(nil)
@@ -81,6 +116,7 @@ import AVFoundation
                 
             case "pauseSong":
                 isSongPlaying = false
+                songPlayer.stop()
                 songPlayer.reset()
                 print("shoulda paused it here")
                 result(nil)
@@ -127,6 +163,8 @@ import AVFoundation
             
             case "pauseRefNote":
                 pauseRefNote()
+                refNotePlayer.stop()
+                refNotePlayer.reset()
                 result(nil)
                 
                 
@@ -150,34 +188,43 @@ import AVFoundation
     private var phase: Double = 0
 
     func playRefNote() {
+        let start = DispatchTime.now()
         guard refFreq > 0 else { return }
+        guard !isRefNotePlaying else { return }
 
-        // Use the mixer’s format to avoid any resample/jitter.
-        let mixFmt = audioEngine.mainMixerNode.outputFormat(forBus: 0)
-        let sr = 44100.0
-        let ch = Int(mixFmt.channelCount)
-        let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                                sampleRate: sr, channels: mixFmt.channelCount,
-                                interleaved: false)!
-
-        // Ensure node is in the graph once, then clear it for a fresh run.
-        if refNotePlayer.engine == nil {
-            audioEngine.attach(refNotePlayer)
-            audioEngine.connect(refNotePlayer, to: audioEngine.mainMixerNode, format: fmt)
-        }
-        if !audioEngine.isRunning { try? audioEngine.start() }
-        refNotePlayer.stop()
-        refNotePlayer.reset()
 
         // Tone state
         let twoPi = 2.0 * Double.pi
-        currentInc = twoPi * Double(refFreq) / Double(sr)
-        let framesPerBuf = max(4096, Int(sr * 0.06)) // ~60–90 ms, avoids underflows nicely
+        currentInc = twoPi * Double(refFreq) / sampleRate
+        let framesPerBuf = max(4096, Int(sampleRate * 0.06)) // ~60–90 ms, avoids underflows nicely
         let cap = AVAudioFrameCount(framesPerBuf)
-        let amp: Float = 0.3
-        print("refFreq: \(refFreq), sampleRate: \(sr), inc: \(currentInc)")
+        let amp: Float = 0.9
+    
         isRefNotePlaying = true
+        if !audioEngine.isRunning {
+            print("AudioEngine was not running")
+            try? audioEngine.start()
+            let route = session.currentRoute
+            print("Audio route: \(route.outputs.map { $0.portName })")
+            do {
+                try session.overrideOutputAudioPort(.speaker)
+                print("changing audio port succeeded")
+            } catch {
+                print("changing audio port failed: \(error)")
+            }
+            
+        }
+
         refNotePlayer.play()
+        print("ref note player: \(refNotePlayer.isPlaying), audio engine: \(audioEngine.isRunning), source: \(session.currentRoute.outputs.map { $0.portName })")
+        
+        
+        let end = DispatchTime.now()
+        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+        let timeInterval = Double(nanoTime) / 1_000_000_000
+        print("Took \(timeInterval) seconds")
+        // Add this debug line to see what's happening
+        print("Audio session when trying to play: category=\(session.category), options=\(session.categoryOptions)")
 
         func scheduleNext() {
             if !isRefNotePlaying {
@@ -187,22 +234,28 @@ import AVFoundation
                 }
                 return
             }
-            guard let b = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: cap) else { return }
-            b.frameLength = cap
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: cap) else { return }
+            buffer.frameLength = cap
             let n = Int(cap)
-            let fcd = b.floatChannelData!
-
+            let fcd = buffer.floatChannelData!
+            
             for i in 0..<n {
                 let s = amp * Float(sin(phase))
                 phase += currentInc
                 if phase >= twoPi { phase -= twoPi }
-                for c in 0..<ch { fcd[c][i] = s }
+                fcd.pointee[i] = s
             }
-            refNotePlayer.scheduleBuffer(b, completionHandler: scheduleNext)
+            print("Scheduling buffer at time: \(Date())")
+            refNotePlayer.scheduleBuffer(buffer) {
+                print("Buffer completed at: \(Date())") // See if this ever fires
+                scheduleNext()
+            }
         }
 
-        // Prime a few buffers so it never starves
-        for _ in 0..<6 { scheduleNext() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { // 10ms delay
+            // Prime a few buffers so it never starves
+            for _ in 0..<6 { scheduleNext() }
+        }
     }
 
     // Call this to stop (pop is okay per your note)
@@ -225,17 +278,42 @@ import AVFoundation
             return
         }
         isMetronomePlaying = true
-        
+        print("within playMetronome: \(session.category), \(session.mode)")
+//        let session = AVAudioSession.sharedInstance()
+//        do {
+//            try session.setCategory(.playAndRecord,
+//                                    mode: .measurement,
+//                                    options: [.defaultToSpeaker, .allowBluetooth])
+//            try session.setActive(true)
+//        } catch {
+//            print("Audio session error: \(error)")
+//        }
+//
         audioEngine.attach(metronomePlayer)
         audioEngine.connect(metronomePlayer, to: audioEngine.mainMixerNode, format: clicksList[0].format)
+        
+        //audioEngine.mainMixerNode.outputVolume = 0.5
+        try? session.overrideOutputAudioPort(.speaker)
         try! audioEngine.start()
+        metronomePlayer.volume = 3.5
         metronomePlayer.play()
+        print("is metronomePlayer playing: \(metronomePlayer.isPlaying), from source: \(session.currentRoute.outputs.map { $0.portName }), volume: \(audioEngine.mainMixerNode.outputVolume)")
+
+        var attempts = 0
+        var nodeTime: AVAudioTime?
+        while nodeTime == nil && attempts < 50 { // Increased attempts
+            nodeTime = metronomePlayer.lastRenderTime
+            if nodeTime == nil {
+                usleep(1000) // 1ms sleep - more responsive than Task.sleep
+                attempts += 1
+            }
+        }
+
+        let playerTime = metronomePlayer.playerTime(forNodeTime: nodeTime!)
+        metronomeScheduledSampleTime = playerTime!.sampleTime
         
+
         
-        
-        let nodeTime = metronomePlayer.lastRenderTime!
-        let playerTime = metronomePlayer.playerTime(forNodeTime: nodeTime)!
-        metronomeScheduledSampleTime = playerTime.sampleTime // small lead-in
         
         scheduleBeats()
     }
@@ -271,7 +349,9 @@ import AVFoundation
         metronomePlayer.scheduleBuffer(click, at: beatTime, options: []) { [weak self] in
             // This completion handler runs in the audio render thread
             guard let self = self else { return }
-            eventSink?(["type": "metronome", "beat": currentBeat])
+            DispatchQueue.main.async {
+                self.eventSink?(["type": "metronome", "beat": currentBeat])
+            }
             guard self.isMetronomePlaying else { return }
             self.metronomeScheduledSampleTime += beatIntervalSamples
             self.currentPulse = (self.currentPulse + 1) % (currentMeter * currentSubdivision)
@@ -290,10 +370,11 @@ import AVFoundation
         isSongPlaying = true
         
         audioEngine.attach(songPlayer)
-        audioEngine.connect(songPlayer, to: audioEngine.mainMixerNode, format: clicksList[0].format)
+        audioEngine.connect(songPlayer, to: audioEngine.mainMixerNode, format: fmt)
+        try? session.overrideOutputAudioPort(.speaker)
         try! audioEngine.start()
+        songPlayer.volume = 3.5
         songPlayer.play()
-        
         
         
         let nodeTime = songPlayer.lastRenderTime!
@@ -311,7 +392,7 @@ import AVFoundation
     var numSectionClicksPlayed = 0
     var currentSectionPulse = 0
     private func scheduleSongBeats(song: [String: Any]){
-        print(isSongPlaying)
+        
         if (currentSectionIndex == (song["sectionsList"] as! [[String: Any]]).count || !isSongPlaying){   //either ran out of sections to play or song ended
     
             currentSectionIndex = 0
@@ -333,7 +414,7 @@ import AVFoundation
        
         
         let beatIntervalSec = 60.0 / Double(tempo * subdivision[0])
-        print("beatInteralSe: \(beatIntervalSec)")
+        
         let beatIntervalSamples = AVAudioFramePosition(beatIntervalSec * sampleRate)
         
         
@@ -352,13 +433,12 @@ import AVFoundation
         let beatTime = AVAudioTime(sampleTime: songScheduledSampleTime, atRate: sampleRate)
         
         songPlayer.scheduleBuffer(click, at: beatTime, options: []) { [weak self] in
-            print("just played a beat, \(currentBeat)")
             guard let self = self else { return }
             eventSink?(["type": "song", "beat": currentBeat, "section": section["sectionId"] ])
             numSectionClicksPlayed += 1
-            print("shoulda played a click, numSectionClicksPlayed: \(self.numSectionClicksPlayed), currentSection: \(self.currentSectionIndex), totalPulses: \(totalPulses)")
+            
             if numSectionClicksPlayed >= totalPulses{  //this is where the section finishes
-                print("moved on here")
+                
                 currentSectionIndex += 1
                 numSectionClicksPlayed = 0
                 currentSectionPulse = 0

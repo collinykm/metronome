@@ -64,7 +64,7 @@ class TunerProvider with ChangeNotifier {
   bool get refNoteVisible => _refNoteVisible;
   void toggleRefNoteVisibility() {_refNoteVisible = !_refNoteVisible; notifyListeners();}
 
-
+  bool needsPriming = true;
   bool isPlaying = false;
   final List _selectedNote = [9, 4];
   //Note: index 0 represents index in notes list (or how many half notes), in this case 9 = A; index 1 represents octave

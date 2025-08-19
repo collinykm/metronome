@@ -1,6 +1,7 @@
 import "dart:math";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_container.dart";
 import "package:metronome_app/components/suberscript.dart";
@@ -29,8 +30,19 @@ class _TunerPageState extends State<TunerPage> {
   @override
   void initState() {
     tunerProvider = Provider.of<TunerProvider>(context, listen: false);
-    tunerProvider.initializeRecorder();
+    initRecorder();
     super.initState();
+  }
+
+  void initRecorder() async {
+    await tunerProvider.initializeRecorder();
+    if (tunerProvider.needsPriming) {
+      await MethodChannel('metronome_method_channel').invokeMethod("playRefNote");
+      await Future.delayed(Duration(milliseconds: 10));
+      await MethodChannel('metronome_method_channel').invokeMethod("pauseRefNote");
+      tunerProvider.needsPriming = false;
+    }
+
   }
   
   @override
@@ -47,112 +59,120 @@ class _TunerPageState extends State<TunerPage> {
   Widget build(BuildContext context) {
 
     final List<dynamic> tuningOutputArray = context.select<TunerProvider, List<dynamic>?>((p) => p.tuningOutputArray) ?? [];
-    return Consumer<TunerProvider>(
-        builder: (context, tuner, child) {
-          return Container(
-            decoration: BoxDecoration(
-                color: AppColors.background
-            ),
-            child: Center(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+
+        final double maxHeight = constraints.maxHeight;
+        final double maxWidth = constraints.maxWidth;
+        final double gap = maxHeight > 800 ? maxHeight * 0.045 : maxHeight * 0.03;
+
+        return Consumer<TunerProvider>(
+          builder: (context, tuner, child) {
+            return Container(
+              decoration: BoxDecoration(
+                  color: AppColors.background
+              ),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 80,),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 32),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            //this row is for A4 = 440hz
-                            Row(
-                              spacing: 1,
-                              children: [
-                                Subscript(text: "A", subscript: "4", style: TextStyles.body.copyWith(fontSize: 14)),
-                                AppIcons.equal(size: 12, color: AppColors.text),
-                                Text("${tuner.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 12),)
-                              ],
-                            ),
-                            AppIconButton(
-                                onPressed: tuner.toggleSettingsVisibility,
-                                icon: AppIcons.sliders()
-                            ),
-                          ],
+                  SafeArea(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: gap/2,),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: maxWidth * 0.08),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              //this row is for A4 = 440hz
+                              Row(
+                                spacing: 1,
+                                children: [
+                                  Subscript(text: "A", subscript: "4", style: TextStyles.body.copyWith(fontSize: 14)),
+                                  AppIcons.equal(size: 12, color: AppColors.text),
+                                  Text("${tuner.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 12),)
+                                ],
+                              ),
+                              AppIconButton(
+                                  onPressed: tuner.toggleSettingsVisibility,
+                                  icon: AppIcons.sliders()
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      TunerGauge(),
+                        TunerGauge(size: maxWidth > 400 ? (maxWidth * 0.88).clamp(0, 360) : (maxWidth * 0.88).clamp(0, 300),),
 
-                      //Note: Note Name, settings
+                        //Note: Note Name
 
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Colors.black, width: 2),
-                            bottom: BorderSide(color: Colors.black, width: 2)
-                          )
+                        Container(
+                          decoration: BoxDecoration(
+                              border: Border(
+                                  top: BorderSide(color: Colors.black, width: 2),
+                                  bottom: BorderSide(color: Colors.black, width: 2)
+                              )
+                          ),
+                          height: 120,
+                          child: Row(
+
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+
+
+                              Superscript(
+                                  text: "${tuningOutputArray[0][0]}",
+                                  superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
+                                  style: TextStyles.title.copyWith(
+                                      fontSize: 70
+                                  )),
+
+
+                            ],
+                          ),
                         ),
-                        height: 180,
-                        child: Row(
 
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-
-
-                            Superscript(
-                              text: "${tuningOutputArray[0][0]}",
-                              superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
-                              style: TextStyles.title.copyWith(
-                                fontSize: 70
-                            )),
-
-
-                          ],
-                        ),
-                      ),
-
-                      //Note: Reference Note
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TitleText("Reference Note"),
-                            Row(
+                        //Note: Reference Note
+                        Expanded(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                AppIconButton(
-                                    onPressed: tuner.toggleRefNoteVisibility,
-                                    icon: AppIcons.tuningFork(size: 60, color: AppColors.text)
-                                ),
-                                Column(
+                                TitleText("Reference Note"),
+                                Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    //TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
-                                    Suberscript(
-                                      text: tuner.noteNames[tuner.selectedNote[0]][0],
-                                      superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
-                                      subscript: "${tuner.selectedNote[1]}",
-                                      style: TextStyles.title.copyWith(fontSize: 40)
+                                    AppIconButton(
+                                        onPressed: tuner.toggleRefNoteVisibility,
+                                        icon: AppIcons.tuningFork(size: 60, color: AppColors.text)
                                     ),
+                                    Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        //TitleText("${tuner.noteNames[tuner.selectedNote[0]]}${tuner.selectedNote[1]}"),
+                                        Suberscript(
+                                            text: tuner.noteNames[tuner.selectedNote[0]][0],
+                                            superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
+                                            subscript: "${tuner.selectedNote[1]}",
+                                            style: TextStyles.title.copyWith(fontSize: 40)
+                                        ),
 
-                                    IconButton(
-                                        onPressed: () {
-                                          tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
-                                        },
-                                        icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
-                                    ),
+                                        IconButton(
+                                            onPressed: () {
+                                              tuner.isPlaying? tuner.pausePlayer() : tuner.playReferenceFreq();
+                                            },
+                                            icon: tuner.isPlaying ? AppIcons.pause() : AppIcons.play()
+                                        ),
+                                      ],
+                                    )
                                   ],
-                                )
+                                ),
                               ],
-                                                    ),
-                          ],
-                        ))
+                            ))
 
 
-                    ],
+                      ],
+                    ),
                   ),
 
 
@@ -184,10 +204,11 @@ class _TunerPageState extends State<TunerPage> {
                   ReferenceNote()
                 ]
               ),
-            ),
-          );
-        }
-      );
+            );
+          }
+        );
+      },
+    );
 
   }
 }

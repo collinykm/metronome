@@ -30,6 +30,7 @@ void main() async{
   Hive.registerAdapter(SectionAdapter());
   Hive.registerAdapter(SubdivisionAdapter());
   await Hive.openBox('songsBox');
+  MethodChannel('metronome_method_channel').invokeMethod("initAudio");
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,

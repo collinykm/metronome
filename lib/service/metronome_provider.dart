@@ -72,6 +72,7 @@ class MetronomeProvider with ChangeNotifier{
       return;
     }
     _isPlaying = true;
+    notifyListeners();
     await methodChannel.invokeMethod("playMetronome");
   }
 
