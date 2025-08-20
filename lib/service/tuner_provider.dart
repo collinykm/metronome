@@ -90,7 +90,7 @@ class TunerProvider with ChangeNotifier {
   void updateSelectedNote(int noteIndex) async{
     _selectedNote[0] = noteIndex;
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
-    double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+    double freq = _A4_FREQ.toDouble() * pow(2, (numSemiFromC1 - 45) / 12).toDouble();
     methodChannel.invokeMethod("updateRefNote", freq);
     notifyListeners();
 
@@ -101,7 +101,7 @@ class TunerProvider with ChangeNotifier {
     _selectedNote[1] = octave;
     notifyListeners();
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
-    double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+    double freq = _A4_FREQ.toDouble() * pow(2, (numSemiFromC1 - 45) / 12).toDouble();
     methodChannel.invokeMethod("updateRefNote", freq);
     await prefs.setStringList("refNote", _selectedNote.map((e) => e.toString()).toList());
   }
@@ -116,7 +116,7 @@ class TunerProvider with ChangeNotifier {
   Future<void> playReferenceFreq() async {
     //getting the hertz
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
-    double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
+    double freq = _A4_FREQ.toDouble() * pow(2, (numSemiFromC1 - 45) / 12).toDouble();
 
     isPlaying = true;
     notifyListeners();

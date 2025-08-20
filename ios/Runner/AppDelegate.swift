@@ -64,13 +64,11 @@ import AVFoundation
                 audioEngine.attach(songPlayer)
                 audioEngine.mainMixerNode.outputVolume = 1.0
 
-                
                 do {
                     try session.setCategory(.playAndRecord,
                                             mode: .measurement,
                                             options: [.defaultToSpeaker, .allowBluetooth])
                     try session.setActive(true)
-    
 
                     audioEngine.connect(refNotePlayer, to: audioEngine.mainMixerNode, format: fmt)
                     audioEngine.connect(metronomePlayer, to: audioEngine.mainMixerNode, format: fmt)
@@ -87,21 +85,17 @@ import AVFoundation
                     print("Audio init failed: \(error)")
                 }
                 result(nil)
-
-                
             
             case "playMetronome":
                 Task {
                     await self.playMetronome()
                     result(nil)
                 }
-                
-               
+
             case "pauseMetronome":
                 isMetronomePlaying = false
                 metronomePlayer.stop()
-                
-                
+                metronomePlayer.reset()
                 currentPulse = 0
                 print("\n\n________________")
                 result(nil)
