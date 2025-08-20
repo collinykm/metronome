@@ -3,12 +3,13 @@ import "package:flutter/services.dart";
 import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_container.dart";
 import "package:metronome_app/components/subscript.dart";
+import "package:metronome_app/components/superscript.dart";
 import "package:metronome_app/service/tuner_provider.dart";
 import "package:metronome_app/theme/colors.dart";
 import "package:metronome_app/theme/icons.dart";
 import "package:metronome_app/theme/typography.dart";
 import "package:provider/provider.dart";
-import "package:string_validator/string_validator.dart";
+
 
 class TunerSettings extends StatefulWidget {
   const TunerSettings({super.key});
@@ -25,7 +26,14 @@ class _TunerSettingsState extends State<TunerSettings> {
     for (int i = -7; i < 5; i++) {
       DropdownMenuItem<int> item = DropdownMenuItem(
         value: i,
-        child: BodyText(noteList[i%12])
+        child: Superscript(
+          text: noteList[i%12][0],
+          superscript: noteList[i%12].length > 1 ? noteList[i%12][1] : "",
+          style: TextStyles.title.copyWith(
+
+          )
+        ),
+
       );
       menuItems.add(item);
     }
