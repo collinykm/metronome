@@ -53,20 +53,21 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
 
   void handleSelectedItemChanged(int index) {
     if (songId.isEmpty || sectionId.isEmpty) return;
-    final currentBeatValue = songsProvider.getMeter(songId, sectionId)[1];
+    final currentBeatValue = songsProvider.getMeter(songId, sectionId)![1];
     final subs = allSubdivisionsMap[currentBeatValue]!;
     songsProvider.updateSubdivision(songId: songId, sectionId: sectionId, sub: subs[index]);
   }
 
   @override
   Widget build(BuildContext context) {
+
     if (songId.isEmpty || sectionId.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final currentBeatValue = songsProvider.getMeter(songId, sectionId)[1];
-    final subs = allSubdivisionsMap[currentBeatValue]!;
-    final index = subs.indexOf(songsProvider.getSubdivision(songId, sectionId));
+    final currentBeatValue = songsProvider.getMeter(songId, sectionId)?[1];
+    final subs = allSubdivisionsMap[currentBeatValue!];
+    final index = subs!.indexOf(songsProvider.getSubdivision(songId, sectionId)!);
 
     return SubdivisionSelectorUI(
       selectedIndex: index,

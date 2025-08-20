@@ -51,6 +51,7 @@ dependencies:
   flutter_inner_shadow: ^0.0.1
   phosphor_flutter: ^2.1.0
   flutter_svg: ^2.0.13
+  shared_preferences: ^2.5.3
 
 
 dev_dependencies:

@@ -64,26 +64,30 @@ class SongsProvider with ChangeNotifier{
   Song getSong(String songId) {
     return _allSongs[_allSongs.indexWhere((song) => song.songId == songId)];
   }
-  Section getSection(String songId, String sectionId) {
+  Section? getSection(String songId, String sectionId) {
     final int songIndex = _allSongs.indexWhere((song) => song.songId == songId);
     final Song songInQuestion = _allSongs[songIndex];
     final int sectionIndex = songInQuestion.sectionsList.indexWhere((section) => section.sectionId == sectionId);
+    if (sectionIndex == -1) {
+      return null;
+    }
     return songInQuestion.sectionsList[sectionIndex];
   }
 
-  List<int> getAccentsList(String songId, String sectionId) {
-    Section section = getSection(songId, sectionId);
-    return section.accentsList;
+  List<int>? getAccentsList(String songId, String sectionId) {
+    Section? section = getSection(songId, sectionId);
+    return section?.accentsList;
   }
 
-  List<int> getMeter(String songId, String sectionId) {
-    Section section = getSection(songId, sectionId);
-    return section.meter;
+  List<int>? getMeter(String songId, String sectionId) {
+    Section? section = getSection(songId, sectionId);
+
+    return section?.meter;
   }
 
-  Subdivision getSubdivision(String songId, String sectionId) {
-    Section section = getSection(songId, sectionId);
-    return section.subdivision;
+  Subdivision? getSubdivision(String songId, String sectionId) {
+    Section? section = getSection(songId, sectionId);
+    return section?.subdivision;
   }
 
 
@@ -245,13 +249,17 @@ class SongsProvider with ChangeNotifier{
   void removeSectionFromSong(String songId, String sectionId){
     Song song = getSong(songId);
     song.sectionsList.removeWhere((section) => section.sectionId == sectionId);
+    _selectedSectionId = "";
 
     _songsBox.put('songs', _allSongs);
     notifyListeners();
   }
 
   void updateFieldInSection({required String songId, required String sectionId, required String toUpdate, required dynamic value}){
-    Section section = getSection(songId, sectionId);
+    Section? section = getSection(songId, sectionId);
+    if (section == null) {
+      throw Exception("section not found");
+    }
     switch (toUpdate) {
       case "name":
         section.updateName(value);
@@ -266,26 +274,36 @@ class SongsProvider with ChangeNotifier{
 
   }
   void updateAccent({required String songId, required String sectionId, required int beat}) {
-    Section section = getSection(songId, sectionId);
-    section.updateAccentsList(beat);
-
-    _songsBox.put('songs', _allSongs);
-    notifyListeners();
+    Section? section = getSection(songId, sectionId);
+    if (section != null) {
+      section.updateAccentsList(beat);
+      _songsBox.put('songs', _allSongs);
+      notifyListeners();
+    } else {
+      throw Exception("section not found");
+    }
   }
 
   void updateMeter({required String songId, required String sectionId, required int index, required int value}) {
-    Section section = getSection(songId, sectionId);
-    section.updateMeter(index, value);
-
-    _songsBox.put('songs', _allSongs);
-    notifyListeners();
+    Section? section = getSection(songId, sectionId);
+    if (section != null) {
+      section.updateMeter(index, value);
+      _songsBox.put('songs', _allSongs);
+      notifyListeners();
+    } else {
+      throw Exception("section not found");
+    }
   }
 
   void updateSubdivision({required String songId, required String sectionId, required Subdivision sub}) {
-    getSection(songId, sectionId).updateSubdivision(sub);
-
-    _songsBox.put('songs', _allSongs);
-    notifyListeners();
+    Section? section = getSection(songId, sectionId);
+    if (section != null) {
+      section.updateSubdivision(sub);
+      _songsBox.put('songs', _allSongs);
+      notifyListeners();
+    } else {
+      throw Exception("section not found");
+    }
   }
 
 }

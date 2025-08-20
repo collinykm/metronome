@@ -60,7 +60,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
       return const SizedBox.shrink();
     }
     
-    List<int> currentMeter = songsProvider.getMeter(songId, sectionId);
+    List<int> currentMeter = songsProvider.getMeter(songId, sectionId)!;
     int selectedBeatIndex = beatsList.indexOf(currentMeter[0]);
     int selectedBeatValueIndex = beatValueList.indexOf(currentMeter[1]);
     print("$selectedBeatIndex, $selectedBeatValueIndex");

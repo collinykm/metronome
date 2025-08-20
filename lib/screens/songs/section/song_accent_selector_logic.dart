@@ -6,10 +6,12 @@ import "package:provider/provider.dart";
 class AccentSelector extends StatefulWidget {
   final double? totalWidth;
   final double? height;
+  final String sectionId;
   const AccentSelector(
     {
       this.totalWidth,
       this.height,
+      required this.sectionId,
       super.key
     }
   );
@@ -23,9 +25,6 @@ class _AccentSelectorState extends State<AccentSelector> {
   String get songId {
     return songsProvider.selectedSongId;
   }
-  String get sectionId {
-    return songsProvider.selectedSectionId;
-  }
   late SongsProvider songsProvider;
 
   @override
@@ -36,7 +35,7 @@ class _AccentSelectorState extends State<AccentSelector> {
 
 
   List<int> get accentsList {
-    return songsProvider.getAccentsList(songId, sectionId);
+    return songsProvider.getAccentsList(songId, widget.sectionId)!;
   }
 
   List<bool> get beepingIndicatorList {
@@ -44,14 +43,14 @@ class _AccentSelectorState extends State<AccentSelector> {
   }
 
   void updateAccent(int index) {
-    songsProvider.updateAccent(songId: songId, sectionId: sectionId, beat: index);
+    songsProvider.updateAccent(songId: songId, sectionId: widget.sectionId, beat: index);
   }
 
 
 
   @override
   Widget build(BuildContext context) {
-    if (songId == "" || sectionId == ""){
+    if (songId == "" || widget.sectionId == ""){
       return const SizedBox.shrink();
     }
 

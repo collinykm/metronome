@@ -6,7 +6,6 @@ import "package:metronome_app/components/popup_dialogue.dart";
 import "package:metronome_app/components/popup_input_dialogue.dart";
 import "package:metronome_app/components/selector_button.dart";
 import "package:metronome_app/screens/songs/section/song_accent_selector_logic.dart";
-import "package:metronome_app/screens/songs/section/section_popup.dart";
 import "package:metronome_app/screens/songs/section/song_meter_selector_logic.dart";
 import "package:metronome_app/screens/songs/section/song_subdivision_selector_logic.dart";
 import "package:metronome_app/service/songs_provider.dart";
@@ -114,11 +113,11 @@ class _SongPageState extends State<SongPage> {
                     children: [
                       const SizedBox(height: 30,),
                       if (song.sectionsList.isEmpty)
-                        TextButton(
+                        AppTextButton(
                           onPressed: () {
                             songsProvider.addSectionToSong(song.songId);
                           },
-                          child: BodyText(" + Add sections to this song"),
+                          textWidget: BodyText(" + Add sections to this song"),
                         ),
           
                      //Region: the card for each section
@@ -189,6 +188,7 @@ class _SongPageState extends State<SongPage> {
                                  //Region: updating num bars
                                  AppTextButton(
                                      onPressed: () {
+                                       songsProvider.setSelectedSectionId(section.sectionId);
                                        TextEditingController controller = TextEditingController(text: section.bars.toString());
                                        showInputDialogue(context: context,
                                          handleSubmit: () {
@@ -227,6 +227,7 @@ class _SongPageState extends State<SongPage> {
                                  //Region: updating tempo
                                  AppTextButton(
                                      onPressed: () {
+                                       songsProvider.setSelectedSectionId(section.sectionId);
                                        TextEditingController controller = TextEditingController(text: section.tempo.toString());
                                        showInputDialogue(context: context,
                                          handleSubmit: () {
@@ -273,13 +274,19 @@ class _SongPageState extends State<SongPage> {
                                children: [
                                  //Region: subdivision selector
                                  SelectorButton(
-                                   onPress: songsProvider.toggleSubdivisionPopup,
+                                   onPress: (){
+                                     songsProvider.setSelectedSectionId(section.sectionId);
+                                     songsProvider.toggleSubdivisionPopup();
+                                    },
                                    content: FilteredImage(assetPath: section.subdivision.imagePath, width: 30, height: 30, color: AppColors.text)
                                 ),
                                  //Region: meter selector
                                  SelectorButton(
-                                     onPress: songsProvider.toggleMeterPopup,
-                                     content: BodyText("${section.meter[0]} / ${section.meter[1]}")
+                                   onPress: () {
+                                     songsProvider.setSelectedSectionId(section.sectionId);
+                                     songsProvider.toggleMeterPopup();
+                                     },
+                                   content: BodyText("${section.meter[0]} / ${section.meter[1]}")
                                  ),
                                ],
                              ),
@@ -288,7 +295,7 @@ class _SongPageState extends State<SongPage> {
                              SingleChildScrollView(
                                padding: EdgeInsets.all(0),
                                scrollDirection: Axis.horizontal,
-                               child: AccentSelector(height: 70, totalWidth: 350,),
+                               child: AccentSelector(height: 70, totalWidth: 350, sectionId: section.sectionId,),
                              )
           
           
