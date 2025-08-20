@@ -27,6 +27,11 @@ class MetronomePage extends StatefulWidget {
 
 class _MetronomePageState extends State<MetronomePage> {
   List<DateTime> tapTimes = [];
+  @override
+  void initState() {
+    Provider.of<MetronomeProvider>(context, listen: false).initProvider();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +163,6 @@ class _MetronomePageState extends State<MetronomePage> {
                               padding: const EdgeInsets.all(8.0),
                               child: LayoutBuilder(
                                 builder: (context, bottomConstraints) {
-                                  print("bottomConstraints height: ${bottomConstraints.maxHeight}");
                                   return TempoKnob(diameter: bottomConstraints.maxHeight - 15,);
                                 },
                               ),

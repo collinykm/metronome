@@ -34,8 +34,8 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
     super.initState();
   }
 
-  void updateSubdivision(Subdivision selected) {
-    metronomeProvider.updateSubdivision(selected);
+  void updateSubdivision(Subdivision selected, int index) {
+    metronomeProvider.updateSubdivision(selected, index);
   }
 
   bool isSubdivisionPopupVisible() {
@@ -48,12 +48,11 @@ class _SubdivisionSelectorState extends State<SubdivisionSelector> {
 
   void handleSelectedItemChanged(int index) {
     Subdivision selected = subdivisionsList[index];
-    updateSubdivision(selected);
+    updateSubdivision(selected, index);
   }
 
   @override
   Widget build(BuildContext context) {
-
     return SubdivisionSelectorUI(
       selectedIndex: selectedIndex,
       subdivisionsList: subdivisionsList,

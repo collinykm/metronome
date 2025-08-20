@@ -1,25 +1,26 @@
 import 'dart:async';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 import "package:flutter/material.dart";
 import 'package:flutter/services.dart';
 import 'dart:math';
 
 import 'package:metronome_app/service/subdivision.dart';
+import 'package:string_validator/string_validator.dart';
 
 
 
 class MetronomeProvider with ChangeNotifier{
   final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
 
-  int _tempo = 120;
   final ValueNotifier<int> tempoListenable = ValueNotifier<int>(0);
+
+  int _tempo = 120;
   List<int> _accentsList = [1, 1, 1, 1];
   Subdivision _subdivision = allSubdivisionsMap[4]![0];
-
   List<int> _meter = [4, 4];
-  bool _isPlaying = false;
 
+  bool _isPlaying = false;
   int get tempo => _tempo;
   List<int> get accentsList => _accentsList;
   Subdivision get subdivision => _subdivision;
@@ -27,7 +28,20 @@ class MetronomeProvider with ChangeNotifier{
   List<int> get meter => _meter;
   bool get isPlaying => _isPlaying;
 
-
+  late SharedPreferences prefs;
+  void initProvider() async {
+    prefs = await SharedPreferences.getInstance();
+    _tempo = prefs.getInt("tempo") ?? 120;
+    _totalAngle = angleFromTempo(tempo);
+    List<String>? accentsStringList = prefs.getStringList("accents");
+    _accentsList = accentsStringList != null ? accentsStringList.map(int.parse).toList() : [1, 1, 1, 1];
+    List<String>? meterStringList = prefs.getStringList("meter");
+    _meter = meterStringList != null ? meterStringList.map(int.parse).toList() : [4, 4];
+    currentBeepingMetronomeList = List.filled(meter[0], false);
+    int? subdivisionIndex = prefs.getInt("subdivisionIndex");
+    _subdivision = subdivisionIndex != null ? allSubdivisionsMap[meter[1]]![subdivisionIndex] : allSubdivisionsMap[4]![0];
+    notifyListeners();
+  }
 
 
   /*
@@ -110,13 +124,16 @@ class MetronomeProvider with ChangeNotifier{
     if (tempo == _tempo) return;
     _tempo = tempo;
     tempoListenable.value = tempo;
+    _totalAngle = angleFromTempo(tempo);
     notifyListeners();
+    await prefs.setInt("tempo", tempo);
     await methodChannel.invokeMethod("updateTempo", tempo);
   }
 
   void updateAccent(int beat) async {
-    accentsList[beat] = (accentsList[beat] + 1) % 4;
+    _accentsList[beat] = (accentsList[beat] + 1) % 4;
     notifyListeners();
+    await prefs.setStringList("accents", accentsList.map((e) => e.toString()).toList());
     await methodChannel.invokeMethod("updateAccent", accentsList);
   }
 
@@ -125,28 +142,37 @@ class MetronomeProvider with ChangeNotifier{
     if (index == 0) {
       meter[0] = value;
       _accentsList = List.filled(value, 1);
+      await prefs.setStringList("accents", accentsList.map((e) => e.toString()).toList());
       currentBeepingMetronomeList = List.filled(value, false);
+      await methodChannel.invokeMethod("updateAccent", accentsList);
     } else {
       //updating the subdivisions whenever the beat value changes to their corresponding one in the new beat value
       int currentlySelectedIndex = allSubdivisionsMap[meter[1]]!.indexOf(subdivision);
-      updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex]);
-
+      updateSubdivision(allSubdivisionsMap[value]![currentlySelectedIndex], currentlySelectedIndex);
       meter[index] = value;
 
     }
     notifyListeners();
+    await prefs.setStringList("meter", meter.map((e) => e.toString()).toList());
     await methodChannel.invokeMethod("updateMeter", meter);
-    await methodChannel.invokeMethod("updateAccent", accentsList);
 
   }
 
-  void updateSubdivision(Subdivision sub) async {
+  void updateSubdivision(Subdivision sub, int index) async {
     _subdivision = sub;
     notifyListeners();
+    await prefs.setInt("subdivisionIndex", index);
     await methodChannel.invokeMethod("updateSubdivision", subdivisionList);
   }
 
 
+
+
+  double angleFromTempo(int tempo) {
+    const double slope = 380 / (8 * pi);
+    const double shift = 2 * pi / 19;
+    return ((tempo - 20) / slope) - shift;
+  }
 
 
   double _totalAngle = 2*pi;  //120 here represents the default tempo

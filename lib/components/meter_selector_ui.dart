@@ -3,10 +3,7 @@ import "package:metronome_app/theme/colors.dart";
 import "package:metronome_app/theme/icons.dart";
 import "package:metronome_app/theme/typography.dart";
 
-class MeterSelectorUi extends StatelessWidget {
-  final List<int> beatsList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-  final List<int> beatValueList = [2, 4, 8];
-
+class MeterSelectorUi extends StatefulWidget {
   final int selectedBeatIndex;
   final int selectedBeatValueIndex;
   final ValueChanged<int> handleMeter0Changed;
@@ -14,7 +11,7 @@ class MeterSelectorUi extends StatelessWidget {
   final VoidCallback toggleVisibility;
   final bool isMeterPopupVisible;
 
-  MeterSelectorUi({
+  const MeterSelectorUi({
     required this.selectedBeatIndex,
     required this.selectedBeatValueIndex,
     required this.handleMeter0Changed,
@@ -25,10 +22,43 @@ class MeterSelectorUi extends StatelessWidget {
   });
 
   @override
+  State<MeterSelectorUi> createState() => _MeterSelectorUiState();
+}
+
+class _MeterSelectorUiState extends State<MeterSelectorUi> {
+  final List<int> beatsList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+  final List<int> beatValueList = [2, 4, 8];
+
+  late FixedExtentScrollController _beatsScrollController;
+  late FixedExtentScrollController _beatValueScrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _beatsScrollController = FixedExtentScrollController(initialItem: widget.selectedBeatIndex);
+    _beatValueScrollController = FixedExtentScrollController(initialItem: widget.selectedBeatValueIndex);
+  }
+
+  @override
+  void didUpdateWidget(covariant MeterSelectorUi oldWidget) {
+    if (widget.selectedBeatIndex != oldWidget.selectedBeatIndex) {
+      _beatsScrollController.jumpToItem(widget.selectedBeatIndex,);
+    }
+    if (widget.selectedBeatValueIndex != oldWidget.selectedBeatValueIndex) {
+      _beatValueScrollController.jumpToItem(widget.selectedBeatValueIndex);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+
+
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedPositioned(
         duration: Duration(milliseconds: 200),
-        right: isMeterPopupVisible ? 30 : -150,
+        right: widget.isMeterPopupVisible ? 30 : -150,
         top: 200,
         child: Container(
           width: 150,
@@ -47,14 +77,18 @@ class MeterSelectorUi extends StatelessWidget {
                   itemExtent: 50, // Height of each item
                   diameterRatio: 1.5, // Adjust the size of the wheel
                   physics: FixedExtentScrollPhysics(),
-                  controller: FixedExtentScrollController(initialItem: selectedBeatIndex),
-                  onSelectedItemChanged: handleMeter0Changed,
+                  controller: _beatsScrollController,
+                  onSelectedItemChanged: (index) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      widget.handleMeter0Changed(index);
+                    });
+                  },
 
                   children:[
                     for (int i = 0; i < beatsList.length; i++)
                       Text(beatsList[i].toString(),
                         style: TextStyles.body.copyWith(
-                          color: i == selectedBeatIndex ? AppColors.accent2 : AppColors.primary,
+                          color: i == widget.selectedBeatIndex ? AppColors.accent2 : AppColors.primary,
                           fontSize: 20,
                         ),
                       )
@@ -71,13 +105,17 @@ class MeterSelectorUi extends StatelessWidget {
                   itemExtent: 50, // Height of each item
                   diameterRatio: 1.5, // Adjust the size of the wheel
                   physics: FixedExtentScrollPhysics(),
-                  controller: FixedExtentScrollController(initialItem: selectedBeatValueIndex),
-                  onSelectedItemChanged: handleMeter1Changed,
+                  controller: _beatValueScrollController,
+                  onSelectedItemChanged: (index) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                    widget.handleMeter1Changed(index);
+                  });
+                  },
                   children:[
                     for (int i = 0; i < beatValueList.length; i++)
                       Text(beatValueList[i].toString(),
                         style: TextStyles.body.copyWith(
-                          color: i == selectedBeatValueIndex ? AppColors.accent2 : AppColors.primary,
+                          color: i == widget.selectedBeatValueIndex ? AppColors.accent2 : AppColors.primary,
                           fontSize: 20,
                         ),
                       )
@@ -85,7 +123,7 @@ class MeterSelectorUi extends StatelessWidget {
                 ),
               ),
 
-              IconButton(onPressed: toggleVisibility, icon: AppIcons.close())
+              IconButton(onPressed: widget.toggleVisibility, icon: AppIcons.close())
 
             ],
           ),

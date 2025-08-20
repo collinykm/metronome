@@ -36,9 +36,7 @@ class _MeterSelectorState extends State<MeterSelector> with SingleTickerProvider
 
 
   void handleMeter0Changed(int value) {
-    print("current selectedBeatIndex: $selectedBeatIndex, value i got was $value");
     metronomeProvider.updateMeter(0, beatsList[value]);
-    print("after updating, selectedBeatIndex: $selectedBeatIndex");
 
   }
   void handleMeter1Changed(int value) {
