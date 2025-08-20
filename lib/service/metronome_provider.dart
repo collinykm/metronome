@@ -75,9 +75,10 @@ class MetronomeProvider with ChangeNotifier{
   //play pause
 
   void Pause() async {
+    await methodChannel.invokeMethod("pauseMetronome");
     _isPlaying = false;
     notifyListeners();
-    await methodChannel.invokeMethod("pauseMetronome");
+
   }
 
   void Play() async {

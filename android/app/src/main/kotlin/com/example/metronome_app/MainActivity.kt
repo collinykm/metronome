@@ -67,6 +67,8 @@ class MainActivity: FlutterActivity() {
                 }
                 "pauseMetronome" -> {
                     isMetronomePlaying = false
+                    metronomeAudioJob?.cancel()
+                    metronomeAudioJob = null
                     result.success(null)
                 }
 
@@ -158,6 +160,7 @@ class MainActivity: FlutterActivity() {
 
 
     private var audioJob: Job? = null
+    private var metronomeAudioJob: Job? = null
     private var refNoteTrack: AudioTrack? = null
 
     // Make these volatile so they can be safely updated from other threads
@@ -241,7 +244,7 @@ class MainActivity: FlutterActivity() {
             AudioTrack.MODE_STREAM
         )
         metronomeTrack.play()
-        CoroutineScope(Dispatchers.Default).launch {
+        metronomeAudioJob = CoroutineScope(Dispatchers.Default).launch {
             try {
                 var currentPulse = 0
                 while (isMetronomePlaying) {
