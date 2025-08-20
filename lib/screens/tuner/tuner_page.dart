@@ -38,6 +38,7 @@ class _TunerPageState extends State<TunerPage> {
 
   void initRecorder() async {
     await tunerProvider.initializeRecorder();
+    await tunerProvider.initTunerPrefs();
     if (tunerProvider.needsPriming && Platform.isIOS) {
       await MethodChannel('metronome_method_channel').invokeMethod("playRefNote");
       await Future.delayed(Duration(milliseconds: 20));

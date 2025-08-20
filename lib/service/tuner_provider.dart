@@ -8,6 +8,7 @@ import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 
@@ -26,11 +27,25 @@ class TunerProvider with ChangeNotifier {
 
 
   //Region Things I need to worry about
+  late SharedPreferences prefs;
+  Future<void> initTunerPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    _useFlats = prefs.getBool("useFlats") ?? true;
+    _A4_FREQ = prefs.getInt("A4Freq") ?? 440;
+    _transposeSemitones = prefs.getInt("transposeSemitones") ?? 0;
+    List<String>? selNote = prefs.getStringList("refNote");
+    _selectedNote = selNote != null ? selNote.map(int.parse).toList() : [9, 4];
+  }
+
+
+
+
   bool _useFlats = true;
   bool get useFlats => _useFlats;
-  void toggleFlats() {
+  void toggleFlats() async {
     _useFlats = !_useFlats;
     notifyListeners();
+    await prefs.setBool("useFlats", _useFlats);
   }
   List<String> get noteNames {
     if (_useFlats) {
@@ -42,14 +57,17 @@ class TunerProvider with ChangeNotifier {
 
   int _A4_FREQ = 440;
   int get A4_FREQ => _A4_FREQ;
-  void updateA4Freq(int freq){
+  void updateA4Freq(int freq) async{
     _A4_FREQ = freq;
     notifyListeners();
+    await prefs.setInt("A4Freq", _A4_FREQ);
   }
-  int transposeSemitones = 0;
-  void updateTransposeSemitones(int semitones) {
-    transposeSemitones += semitones;
+  int _transposeSemitones = 0;
+  int get transposeSemitones => _transposeSemitones;
+  void updateTransposeSemitones(int semitones) async {
+    _transposeSemitones = semitones; //TODO: possible bug here
     notifyListeners();
+    await prefs.setInt("transposeSemitones", _transposeSemitones);
   }
   //for example Bb would be -2, Eb would be 3
 
@@ -66,24 +84,26 @@ class TunerProvider with ChangeNotifier {
 
   bool needsPriming = true;
   bool isPlaying = false;
-  final List _selectedNote = [9, 4];
+  List _selectedNote = [9, 4];
   //Note: index 0 represents index in notes list (or how many half notes), in this case 9 = A; index 1 represents octave
   List get selectedNote => _selectedNote;
-  void updateSelectedNote(int noteIndex) {
+  void updateSelectedNote(int noteIndex) async{
     _selectedNote[0] = noteIndex;
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
     double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
-    print("\n just updated note, now frequency is $freq");
     methodChannel.invokeMethod("updateRefNote", freq);
     notifyListeners();
+
+    await prefs.setStringList("refNote", _selectedNote.map((e) => e.toString()).toList());
   }
-  void updateSelectedNoteOctave(int octave) {
+  void updateSelectedNoteOctave(int octave) async{
     octave = octave.clamp(1, 8);
     _selectedNote[1] = octave;
     notifyListeners();
     int numSemiFromC1 = (selectedNote[1] - 1) * 12 + selectedNote[0];
     double freq = 440.0 * pow(2, (numSemiFromC1 - 45) / 12);
     methodChannel.invokeMethod("updateRefNote", freq);
+    await prefs.setStringList("refNote", _selectedNote.map((e) => e.toString()).toList());
   }
 
   final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
@@ -233,7 +253,7 @@ class TunerProvider with ChangeNotifier {
     final double midiExact = 69 + 12 * (log(f / 440) / ln2);
     final int    midiInt   = midiExact.round();
     //For reference, C4 has a midiInt of 60. this means C0 has a midiInt of 12, which matches with the octave var. to transpose, subtract the transposition
-    final int transposedNoteIndex = midiInt - transposeSemitones;
+    final int transposedNoteIndex = midiInt - _transposeSemitones;
     final String noteName  = noteNames[transposedNoteIndex % 12];
     final int    octave    = (transposedNoteIndex ~/ 12) - 1;
     final double refFreq   = _A4_FREQ.toDouble() * pow(2, (midiInt - 69) / 12);
