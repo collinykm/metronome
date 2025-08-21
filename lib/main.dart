@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:metronome_app/screens/metronome/metronome_page.dart';
 import 'package:metronome_app/screens/songs/all_songs_page.dart';
@@ -23,7 +24,8 @@ import 'package:provider/provider.dart';
 void main() async{
 
   //debugPaintSizeEnabled = true;
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   final dir = await getApplicationDocumentsDirectory();
   await Hive.initFlutter();
   Hive.registerAdapter(SongAdapter());
@@ -59,6 +61,7 @@ void main() async{
       ),
     ),
   );
+  FlutterNativeSplash.remove();
 }
 
 
