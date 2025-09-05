@@ -65,9 +65,7 @@ import AVFoundation
                 audioEngine.mainMixerNode.outputVolume = 1.0
 
                 do {
-                    try session.setCategory(.playAndRecord,
-                                            mode: .measurement,
-                                            options: [.defaultToSpeaker, .allowBluetooth])
+                    try session.setCategory(.playback, mode: .default)
                     try session.setActive(true)
 
                     audioEngine.connect(refNotePlayer, to: audioEngine.mainMixerNode, format: fmt)
@@ -75,7 +73,7 @@ import AVFoundation
                     audioEngine.connect(songPlayer, to: audioEngine.mainMixerNode, format: fmt)
 
                     try audioEngine.start()
-                    try session.overrideOutputAudioPort(.speaker)
+                    //try session.overrideOutputAudioPort(.speaker)
                     print("Engine running? \(audioEngine.isRunning)")
                     print(session.category, session.mode)
 
@@ -158,7 +156,7 @@ import AVFoundation
             case "pauseRefNote":
                 pauseRefNote()
                 refNotePlayer.stop()
-                refNotePlayer.reset()
+                //refNotePlayer.reset()
                 result(nil)
                 
                 
@@ -195,21 +193,21 @@ import AVFoundation
         let amp: Float = 0.9
     
         isRefNotePlaying = true
-        if !audioEngine.isRunning {
-            print("AudioEngine was not running")
-            try? audioEngine.start()
-            let route = session.currentRoute
-            print("Audio route: \(route.outputs.map { $0.portName })")
+        
+        if session.category != .playAndRecord {
             do {
-                try session.overrideOutputAudioPort(.speaker)
-                print("changing audio port succeeded")
+                try session.setCategory(.playAndRecord,
+                                                      mode: .default,
+                                                      options: [.defaultToSpeaker, .allowBluetooth])
+                try session.setActive(true)
             } catch {
-                print("changing audio port failed: \(error)")
+                print("failed to set session category to .playAndRecord: \(error)")
             }
             
         }
-
-        refNotePlayer.play()
+  
+    
+  
         print("ref note player: \(refNotePlayer.isPlaying), audio engine: \(audioEngine.isRunning), source: \(session.currentRoute.outputs.map { $0.portName })")
         
         
@@ -239,12 +237,12 @@ import AVFoundation
                 if phase >= twoPi { phase -= twoPi }
                 fcd.pointee[i] = s
             }
-            print("Scheduling buffer at time: \(Date())")
             refNotePlayer.scheduleBuffer(buffer) {
-                print("Buffer completed at: \(Date())") // See if this ever fires
                 scheduleNext()
             }
         }
+        scheduleNext()  //this is very important, as scheduling a buffer before starting playback removes the bug of the app freezing after play/pausing for like 10 times
+        refNotePlayer.play()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { // 10ms delay
             // Prime a few buffers so it never starves
@@ -272,23 +270,17 @@ import AVFoundation
             return
         }
         isMetronomePlaying = true
-        print("within playMetronome: \(session.category), \(session.mode)")
-//        let session = AVAudioSession.sharedInstance()
-//        do {
-//            try session.setCategory(.playAndRecord,
-//                                    mode: .measurement,
-//                                    options: [.defaultToSpeaker, .allowBluetooth])
-//            try session.setActive(true)
-//        } catch {
-//            print("Audio session error: \(error)")
-//        }
-//
-        audioEngine.attach(metronomePlayer)
-        audioEngine.connect(metronomePlayer, to: audioEngine.mainMixerNode, format: clicksList[0].format)
         
-        //audioEngine.mainMixerNode.outputVolume = 0.5
-        try? session.overrideOutputAudioPort(.speaker)
-        try! audioEngine.start()
+        if session.category != .playback {
+            do {
+                try session.setCategory(.playback, mode: .default)
+                try session.setActive(true)
+            } catch {
+                print("Failed to reset to playback: \(error)")
+            }
+        }
+        print("within playMetronome: \(session.category), \(session.mode)")
+
         metronomePlayer.volume = 3.5
         metronomePlayer.play()
         print("is metronomePlayer playing: \(metronomePlayer.isPlaying), from source: \(session.currentRoute.outputs.map { $0.portName }), volume: \(audioEngine.mainMixerNode.outputVolume)")
@@ -307,8 +299,6 @@ import AVFoundation
         metronomeScheduledSampleTime = playerTime!.sampleTime
         
 
-        
-        
         scheduleBeats()
     }
     
@@ -363,13 +353,14 @@ import AVFoundation
         }
         isSongPlaying = true
         
-        audioEngine.attach(songPlayer)
-        audioEngine.connect(songPlayer, to: audioEngine.mainMixerNode, format: fmt)
-        try? session.overrideOutputAudioPort(.speaker)
-        try! audioEngine.start()
-        songPlayer.volume = 3.5
-        songPlayer.play()
-        
+        if session.category != .playback {
+            do {
+                try session.setCategory(.playback, mode: .default)
+                try session.setActive(true)
+            } catch {
+                print("Failed to reset to playback: \(error)")
+            }
+        }
         
         let nodeTime = songPlayer.lastRenderTime!
         let playerTime = songPlayer.playerTime(forNodeTime: nodeTime)!
