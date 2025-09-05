@@ -1,4 +1,4 @@
-package com.example.metronome_app
+package com.collinykm.metronome
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.MethodChannel
