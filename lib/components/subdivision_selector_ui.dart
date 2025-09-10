@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import "package:flutter/material.dart";
 import "package:metronome_app/components/filtered_image.dart";
 import "package:metronome_app/theme/colors.dart";
@@ -37,11 +38,16 @@ class _SubdivisionSelectorUIState extends State<SubdivisionSelectorUI> {
     super.initState();
   }
 
+
+  bool isUserScrolling = false;
+
   @override
   void didUpdateWidget(covariant SubdivisionSelectorUI oldWidget) {
-    if (widget.selectedIndex != oldWidget.selectedIndex) {
+    if (widget.selectedIndex != oldWidget.selectedIndex && !isUserScrolling) {
       _controller.jumpToItem(widget.selectedIndex);
+      print("updated widget");
     }
+
     super.didUpdateWidget(oldWidget);
   }
 
@@ -71,22 +77,30 @@ class _SubdivisionSelectorUIState extends State<SubdivisionSelectorUI> {
                 height: 200,
                 width: 50,
 
-                child: ListWheelScrollView(
-                  itemExtent: 50, // Height of each item
-                  diameterRatio: 1.5, // Adjust the size of the wheel
-                  physics: FixedExtentScrollPhysics(),
-                  controller: _controller,
-                  onSelectedItemChanged: (index) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      widget.handleSelectedItemChanged(index);
-                    });
-
+                child: NotificationListener<UserScrollNotification>(
+                  onNotification: (n) {
+                    isUserScrolling = n.direction != ScrollDirection.idle;
+                    return false;
                   },
 
-                  children:[
-                    for (int i = 0; i < widget.subdivisionsList.length; i++)
-                      FilteredImage(assetPath: widget.subdivisionsList[i].imagePath, width: 50, height: 30, color: i == widget.selectedIndex ? AppColors.accent2 : AppColors.primary)
-                  ],
+                  child: ListWheelScrollView(
+                    itemExtent: 50, // Height of each item
+                    diameterRatio: 1.5, // Adjust the size of the wheel
+                    controller: _controller,
+                    physics: FixedExtentScrollPhysics(),
+                    magnification: 1,
+                    onSelectedItemChanged: (index) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        widget.handleSelectedItemChanged(index);
+                      });
+
+                    },
+
+                    children:[
+                      for (int i = 0; i < widget.subdivisionsList.length; i++)
+                        FilteredImage(assetPath: widget.subdivisionsList[i].imagePath, width: 50, height: 30, color: i == widget.selectedIndex ? AppColors.accent2 : AppColors.primary)
+                    ],
+                  ),
                 ),
               ),
 
