@@ -24,7 +24,21 @@ class _TempoKnobState extends State<TempoKnob> {
       _ctrNotifier.addListener(_onCounterChanged);
     });
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateCenter();
+    });
   }
+
+  void _calculateCenter() {
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
+      final size = renderBox.size;
+      print(size);
+      Provider.of<MetronomeProvider>(context, listen: false).setKnobRadius(size.width/2);
+      center = Offset(size.width/2, size.width/2);
+    }
+  }
+  Offset center = Offset(130, 130);
 
   void _onCounterChanged() {
     HapticFeedback.selectionClick();
@@ -37,13 +51,12 @@ class _TempoKnobState extends State<TempoKnob> {
 
     return GestureDetector(
       onPanStart: (d) {
-
         metronome.setPreviousOffset(d.localPosition);
       } ,
       onPanUpdate: (details) {
         metronome.handleSpin(details);
       },
-      onPanEnd: (_) => metronome.setPreviousOffset(null),
+      onPanEnd: (d) {metronome.setPreviousOffset(null);},
 
       // INNER-SHADOW stays fixed
       child: InnerShadow(
@@ -81,6 +94,16 @@ class _TempoKnobState extends State<TempoKnob> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                      Center(
+                        child: Container(
+                          width: 3,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.blue
+                          ),
+                        ),
+                      ),
                   // Rim ticks
                   CustomPaint(
                     size: Size.square(widget.diameter),

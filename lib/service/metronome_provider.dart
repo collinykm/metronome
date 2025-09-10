@@ -32,7 +32,7 @@ class MetronomeProvider with ChangeNotifier{
   void initProvider() async {
     prefs = await SharedPreferences.getInstance();
     _tempo = prefs.getInt("tempo") ?? 120;
-    _totalAngle = angleFromTempo(tempo);
+    updateKnobAngleFromTempo(tempo);
     List<String>? accentsStringList = prefs.getStringList("accents");
     _accentsList = accentsStringList != null ? accentsStringList.map(int.parse).toList() : [1, 1, 1, 1];
     List<String>? meterStringList = prefs.getStringList("meter");
@@ -125,7 +125,7 @@ class MetronomeProvider with ChangeNotifier{
     if (tempo == _tempo) return;
     _tempo = tempo;
     tempoListenable.value = tempo;
-    _totalAngle = angleFromTempo(tempo);
+
     notifyListeners();
     await prefs.setInt("tempo", tempo);
     await methodChannel.invokeMethod("updateTempo", tempo);
@@ -169,10 +169,11 @@ class MetronomeProvider with ChangeNotifier{
 
 
 
-  double angleFromTempo(int tempo) {
+  void updateKnobAngleFromTempo(int tempo) {
     const double slope = 380 / (8 * pi);
     const double shift = 2 * pi / 19;
-    return ((tempo - 20) / slope) - shift;
+    double angle = ((tempo - 20) / slope) - shift;
+    _totalAngle = angle;
   }
 
 
@@ -180,6 +181,8 @@ class MetronomeProvider with ChangeNotifier{
   double get totalAngle => _totalAngle;
   Offset? _previousOffset;
   Offset? get previousOffset => _previousOffset;
+  double _knobRadius = 120;
+  void setKnobRadius(double r) => _knobRadius = r;
 
   void setPreviousOffset(Offset? offset) {
     _previousOffset = offset;
@@ -189,7 +192,7 @@ class MetronomeProvider with ChangeNotifier{
     if (_previousOffset == null) return;
 
     final currentOffset = details.localPosition;
-    final center = Offset(120, 120); //TODO: Match with half size of the knob
+    final center = Offset(_knobRadius, _knobRadius); //TODO: Match with half size of the knob
 
     // Calculate the angle between the previous and current touch positions
     final previousVector = _previousOffset! - center;
@@ -209,7 +212,7 @@ class MetronomeProvider with ChangeNotifier{
     }
     // Update the total angle, clamping it between 0 and 8π
 
-    _totalAngle = (totalAngle + delta).clamp(-2*pi/19, -2*pi/19+8 * pi);
+    _totalAngle = (_totalAngle + delta).clamp(-2*pi/19, -2*pi/19+8 * pi);
 
     const double slope = 380 / (8 * pi);   // 47.5 / π
     const double shift = 2 * pi / 19;      // anchor so f(2π) = 120

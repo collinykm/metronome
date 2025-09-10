@@ -43,7 +43,6 @@ class _MetronomePageState extends State<MetronomePage> {
           final double maxHeight = constraints.maxHeight;
           final double maxWidth = constraints.maxWidth;
           final double gap = maxHeight > 800 ? maxHeight * 0.045 : maxHeight * 0.03;
-          print("maxheight: $maxHeight, maxwidth: $maxWidth");
           return Consumer<MetronomeProvider>(
             builder: (context, metronome, child) {
               return Container(
@@ -123,6 +122,7 @@ class _MetronomePageState extends State<MetronomePage> {
                                       if (tapTimes.length >= 2) {
                                         final timeDifference = currentTime.difference(tapTimes[tapTimes.length - 2]);
                                         final tempo = (60.0 / (timeDifference.inMicroseconds / 1000000.0)).toInt();
+                                        metronome.updateKnobAngleFromTempo(tempo);
                                         metronome.updateTempo(tempo);
                                       }
 
@@ -157,7 +157,7 @@ class _MetronomePageState extends State<MetronomePage> {
 
                           //Note: tempo selector
                           SizedBox(height: gap / 3,),
-                          TitleText("${metronome.tempo.toString()} BPM"),
+                          TitleText("${metronome.tempo.toString()}"),
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
