@@ -30,15 +30,11 @@ I can find the section in the Song's sectionsList and then call the respective u
 
 */
 
-Song autumnLeaves = Song(songName: "Autumn Leaves", sectionsList: [
-  Section(sectionName: "Head", bars: 1, tempo: 60, accentsList: [2, 1, 1, 1], meter: [4, 4], subdivision: allSubdivisionsMap[4]![0]),
-  Section(sectionName: "Double time", bars: 1, tempo: 120, accentsList: [3, 1, 0, 1], meter: [4, 4], subdivision: allSubdivisionsMap[4]![0]),
+Song sampleSong = Song(songName: "Sample", sectionsList: [
+  Section(sectionName: "Section 1", bars: 4, tempo: 60, accentsList: [2, 1, 1, 1], meter: [4, 4], subdivision: allSubdivisionsMap[4]![0]),
+  Section(sectionName: "Section 2", bars: 8, tempo: 120, accentsList: [3, 1, 0, 1], meter: [3, 4], subdivision: allSubdivisionsMap[4]![0]),
 ]);
 
-Song takeFive = Song(songName: "Take five", sectionsList: [
-  Section(sectionName: "Head", bars: 32, tempo: 120, accentsList: [3, 1, 1, 2, 1], meter: [5, 4], subdivision: allSubdivisionsMap[4]![0]),
-  Section(sectionName: "goofy part", bars: 64, tempo: 320, accentsList: [3, 1, 1, 2, 1], meter: [5, 4], subdivision: allSubdivisionsMap[4]![0]),
-]);
 
 
 
@@ -48,7 +44,7 @@ class SongsProvider with ChangeNotifier{
   final Box _songsBox = Hive.box('songsBox');
 
 
-  List<Song> _allSongs = [autumnLeaves, takeFive];
+  List<Song> _allSongs = [sampleSong];
   List<Song> allSongs() {
     if(_songsBox.get("songs") == null){
       print("songsBox was null");
