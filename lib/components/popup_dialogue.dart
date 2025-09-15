@@ -20,7 +20,7 @@ Future<bool> showPopupDialogue(BuildContext context, String title, String messag
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
-              child: Text(confirmText, style: TextStyles.body.copyWith(color: Colors.red),),
+              child: BodyText(confirmText, color: Colors.red,),
             ),
           ],
         );

@@ -4,8 +4,6 @@ import "dart:math";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:metronome_app/components/app_icon_button.dart";
-import "package:metronome_app/components/app_text_button.dart";
-import "package:metronome_app/components/popup_container.dart";
 import "package:metronome_app/components/suberscript.dart";
 import "package:metronome_app/components/subscript.dart";
 import "package:metronome_app/components/superscript.dart";
@@ -92,14 +90,23 @@ class _TunerPageState extends State<TunerPage> {
                               Row(
                                 spacing: 1,
                                 children: [
-                                  Subscript(text: "A", subscript: "4", style: TextStyles.body.copyWith(fontSize: 14)),
-                                  AppIcons.equal(size: 12, color: AppColors.text),
-                                  Text("${tuner.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 12),)
+                                  GestureDetector(
+                                    onTap: tuner.toggleSettingsVisibility,
+                                    child: Row(
+                                      children: [
+                                        Suberscript(text: "A", subscript: "4",),
+                                        AppIcons.equal(size: 12, color: AppColors.text),
+                                        BodyText("${tuner.A4_FREQ}Hz",)
+                                      ],
+                                    ),
+                                  )
+
+
                                 ],
                               ),
                               AppIconButton(
                                   onPressed: tuner.toggleSettingsVisibility,
-                                  icon: AppIcons.sliders()
+                                  icon: AppIcons.sliders(size: 30)
                               ),
                             ],
                           ),
@@ -159,7 +166,7 @@ class _TunerPageState extends State<TunerPage> {
                                                     text: tuner.noteNames[tuner.selectedNote[0]][0],
                                                     superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
                                                     subscript: "${tuner.selectedNote[1]}",
-                                                    style: TextStyles.titleMedium.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(50))
+                                                    fontSize: 50,
                                                 ),
                                               ),
 

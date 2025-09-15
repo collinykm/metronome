@@ -157,7 +157,7 @@ class _MetronomePageState extends State<MetronomePage> {
 
                           //Note: tempo selector
                           SizedBox(height: gap / 3,),
-                          TitleText("${metronome.tempo.toString()} BPM"),
+                          TitleText("${metronome.tempo.toString()} BPM", fontSize: 24,),
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),

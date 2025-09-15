@@ -96,12 +96,7 @@ class _MeterSelectorUiState extends State<MeterSelectorUi> {
 
                     children:[
                       for (int i = 0; i < beatsList.length; i++)
-                        Text(beatsList[i].toString(),
-                          style: TextStyles.body.copyWith(
-                            color: i == widget.selectedBeatIndex ? AppColors.accent2 : AppColors.primary,
-                            fontSize: 20,
-                          ),
-                        )
+                        BodyText(beatsList[i].toString(), fontSize: 20, color: i == widget.selectedBeatIndex ? AppColors.accent2 : AppColors.primary,)
                     ],
                   ),
                 ),
@@ -130,12 +125,7 @@ class _MeterSelectorUiState extends State<MeterSelectorUi> {
                     },
                     children:[
                       for (int i = 0; i < beatValueList.length; i++)
-                        Text(beatValueList[i].toString(),
-                          style: TextStyles.body.copyWith(
-                            color: i == widget.selectedBeatValueIndex ? AppColors.accent2 : AppColors.primary,
-                            fontSize: 20,
-                          ),
-                        )
+                        BodyText(beatValueList[i].toString(), fontSize: 20, color: i == widget.selectedBeatValueIndex ? AppColors.accent2 : AppColors.primary,)
                     ],
                   ),
                 ),

@@ -29,9 +29,7 @@ class _TunerSettingsState extends State<TunerSettings> {
         child: Superscript(
           text: noteList[i%12][0],
           superscript: noteList[i%12].length > 1 ? noteList[i%12][1] : "",
-          style: TextStyles.titleMedium.copyWith(
-
-          )
+          style: TextStyles.titleMedium
         ),
 
       );
@@ -154,40 +152,13 @@ class _TunerSettingsState extends State<TunerSettings> {
                            },
                            icon: AppIcons.minus()
                          ),
-                         Text("${tunerProvider.A4_FREQ}Hz", style: TextStyles.body.copyWith(fontSize: 18),),
+                         BodyText("${tunerProvider.A4_FREQ}Hz", fontSize: 18,),
                          AppIconButton(onPressed: () { HapticFeedback.lightImpact();tunerProvider.updateA4Freq(tunerProvider.A4_FREQ + 1);}, icon: AppIcons.plus()),
                        ],
                      ),
                      const SizedBox(height: 20,),
 
 
-
-                     /*
-                     SizedBox(
-                       width: 30,
-                       child: TextField(
-                         controller: a4FreqInput,
-                         style: TextStyles.body,
-                         keyboardType: TextInputType.number,
-                         onChanged: (str) {
-                           str = str.trim();
-                           if (str.isNumeric) {
-                             int freq = int.parse(str);
-                             tunerProvider.updateA4Freq(freq);
-                           } else {
-                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                               content: const BodyText(
-                                   "Input can only contain numbers"),
-                               showCloseIcon: true,
-                               duration: const Duration(seconds: 2),
-                               backgroundColor: Colors.grey,
-                             ));
-                           }
-                         },
-                       ),
-                     )
-
-                      */
                      TextButton(
                        style: TextButton.styleFrom(
                          backgroundColor: Colors.grey.shade300,

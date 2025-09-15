@@ -113,7 +113,7 @@ class _AllSongsPageState extends State<AllSongsPage> {
             
                                 child: ListTile(
                                   contentPadding: EdgeInsets.all(0),
-                                  title: Text(song.songName, style: TextStyles.titleMedium.copyWith(fontSize: 16)),
+                                  title: TitleText(song.songName, fontSize: 16),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [

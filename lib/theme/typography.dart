@@ -17,20 +17,29 @@ class TextStyles {
 
 class BodyText extends StatelessWidget {
   final String text;
-  const BodyText(this.text, {super.key});
+  final double? fontSize;
+  final Color? color;
+  const BodyText(this.text, {this.fontSize, this.color, super.key});
 
   @override
   Widget build(BuildContext context) {
     final userScaler = MediaQuery.of(context).textScaler;
     // Clamp to avoid extreme cases (say, system set to 3x or 0.5x).
     final dampenedScaler = userScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 1.5);
-    return Text(text, textScaler: dampenedScaler, style: TextStyles.body);
+    return Text(text, textScaler: dampenedScaler, style:
+      TextStyles.body.copyWith(
+        fontSize: fontSize ?? 14,
+        color: color ?? AppColors.text
+      )
+    );
   }
 }
 
 class TitleText extends StatelessWidget {
   final String text;
-  const TitleText(this.text, {super.key});
+  final double? fontSize;
+  final Color? color;
+  const TitleText(this.text, {this.fontSize, this.color, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +47,10 @@ class TitleText extends StatelessWidget {
     // Clamp to avoid extreme cases (say, system set to 3x or 0.5x).
     final dampenedScaler = userScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 2);
 
-    return Text(text, textScaler: dampenedScaler, style: TextStyles.titleMedium,);
+    return Text(text, textScaler: dampenedScaler, style:
+    TextStyles.titleMedium.copyWith(
+      fontSize: fontSize ?? 20,
+      color: color ?? AppColors.text),
+    );
   }
 }
