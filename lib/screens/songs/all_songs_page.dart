@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_dialogue.dart";
 import "package:metronome_app/components/popup_input_dialogue.dart";
@@ -102,45 +103,71 @@ class _AllSongsPageState extends State<AllSongsPage> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             for (final song in filteredSongs)
-                              Container(
-                                margin: EdgeInsets.only(bottom: 20, right: 20, left: 20),
-                                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: AppColors.primary,
-                                ),
-            
-            
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.all(0),
-                                  title: TitleText(song.songName, fontSize: 16),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      //the play button
-                                      AppIconButton(
-                                        onPressed: () {
-                                          songsProvider.playSong(song.songId);
-                                        },
-                                        icon: song.songId == songsProvider.currentlyPlayingSongId ? AppIcons.pause() : AppIcons.play(),
-                                      ),
-            
-            
-                                      //the edit button
-                                      AppIconButton(
-                                        onPressed: (){
-                                          songsProvider.setSelectedSongId(song.songId);
-                                          Navigator.of(context).push(
-                                              MaterialPageRoute(builder: (context) => SongPage())
-                                          );
-                                        },
-                                        icon: AppIcons.edit(color: AppColors.accent1),
-                                      ),
-                                    ],
+                              GestureDetector(
+                                onTap: (){
+                                  songsProvider.setSelectedSongId(song.songId);
+                                  Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (context) => SongPage())
+                                  );
+                                },
+                                child: Container(
+                                  margin: EdgeInsets.only(bottom: 20, right: 20, left: 20),
+                                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: AppColors.primary,
                                   ),
-                                )
-            
-            
+
+
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.all(0),
+                                    title: GestureDetector(
+                                      onLongPress: () async {
+                                        HapticFeedback.mediumImpact();
+                                        TextEditingController controller = TextEditingController(text: song.songName);
+
+                                        showInputDialogue(context: context,
+                                          handleSubmit: () {
+                                            songsProvider.changeSongName(songsProvider.selectedSongId, controller.text.trim());
+                                            Navigator.pop(context);
+                                          },
+                                          title: "Rename this song",
+                                          hintText: "Rename",
+                                          controller: controller,
+                                          confirmText: "Done",
+                                        );
+                                      },
+                                      child: TitleText(song.songName, fontSize: 16)
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        //the play button
+                                        AppIconButton(
+                                          onPressed: () {
+                                            songsProvider.playSong(song.songId);
+                                          },
+                                          icon: song.songId == songsProvider.currentlyPlayingSongId ? AppIcons.pause() : AppIcons.play(),
+                                        ),
+
+
+                                        //the edit button
+                                        AppIconButton(
+                                          onPressed: (){
+                                            HapticFeedback.mediumImpact();
+                                            songsProvider.setSelectedSongId(song.songId);
+                                            Navigator.of(context).push(
+                                                MaterialPageRoute(builder: (context) => SongPage())
+                                            );
+                                          },
+                                          icon: AppIcons.edit(color: AppColors.accent1),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+
+
+                                ),
                               ),
                           ],
                         ),

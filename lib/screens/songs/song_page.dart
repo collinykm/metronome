@@ -140,27 +140,22 @@ class _SongPageState extends State<SongPage> {
                                children: [
                                  Align(
                                    alignment: Alignment.bottomCenter,
-                                   child: TextButton(
+                                   child: AppTextButton(
                                      onPressed: () {
                                        TextEditingController controller = TextEditingController(text: section.sectionName);
-                                       showInputDialogue(context: context,
-                                         handleSubmit: () {
-                                           String text = controller.text.trim();
-                                           songsProvider.updateFieldInSection(songId: song.songId, sectionId: section.sectionId, toUpdate: "name", value: text);
-                                           Navigator.pop(context);
-                                         },
-                                         title: "Name this section",
-                                         hintText: "ex. Part A",
-                                         controller: controller,
-                                         confirmText: "Done",
-                                       );
-                                     },
-                                      style: TextButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: Size(50, 36),                   // no min height/width
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                     child: TitleText(section.sectionName),
+                                         showInputDialogue(context: context,
+                                           handleSubmit: () {
+                                             String text = controller.text.trim();
+                                             songsProvider.updateFieldInSection(songId: song.songId, sectionId: section.sectionId, toUpdate: "name", value: text);
+                                             Navigator.pop(context);
+                                           },
+                                           title: "Name this section",
+                                           hintText: "ex. Part A",
+                                           controller: controller,
+                                           confirmText: "Done",
+                                         );
+                                       },
+                                     textWidget: TitleText(section.sectionName)
                                    ),
                                  ),
                                  //Region: delete section button
