@@ -100,7 +100,7 @@ import AVFoundation
                 
             case "playSong":
                 songWork = Task {
-                    var song = call.arguments as! [String: Any]
+                    let song = call.arguments as! [String: Any]
                     print(song)
                     await self.playSong(song: song)
                 }
@@ -135,7 +135,7 @@ import AVFoundation
             
             case "playRefNote":
                 Task {
-                    await self.playRefNote()
+                    self.playRefNote()
                 }
                 result(nil)
                 
@@ -361,10 +361,21 @@ import AVFoundation
                 print("Failed to reset to playback: \(error)")
             }
         }
+        songPlayer.volume = 3.5
+        songPlayer.play()
         
-        let nodeTime = songPlayer.lastRenderTime!
-        let playerTime = songPlayer.playerTime(forNodeTime: nodeTime)!
-        songScheduledSampleTime = playerTime.sampleTime // small lead-in
+        var attempts = 0
+        var nodeTime: AVAudioTime?
+        while nodeTime == nil && attempts < 50 { // Increased attempts
+            nodeTime = songPlayer.lastRenderTime
+            if nodeTime == nil {
+                usleep(1000) // 1ms sleep - more responsive than Task.sleep
+                attempts += 1
+            }
+        }
+        
+        let playerTime = songPlayer.playerTime(forNodeTime: nodeTime!)
+        songScheduledSampleTime = playerTime!.sampleTime // small lead-in
         
         scheduleSongBeats(song: song)
         

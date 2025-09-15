@@ -29,7 +29,7 @@ class _TunerSettingsState extends State<TunerSettings> {
         child: Superscript(
           text: noteList[i%12][0],
           superscript: noteList[i%12].length > 1 ? noteList[i%12][1] : "",
-          style: TextStyles.title.copyWith(
+          style: TextStyles.titleMedium.copyWith(
 
           )
         ),
@@ -136,7 +136,7 @@ class _TunerSettingsState extends State<TunerSettings> {
                  Row(
                    mainAxisSize: MainAxisSize.min,
                    children: [
-                     Subscript(text: "A", subscript: "4", style: TextStyles.title),
+                     Subscript(text: "A", subscript: "4", style: TextStyles.titleMedium),
                      TitleText(" Frequency")
                    ],
                  ),

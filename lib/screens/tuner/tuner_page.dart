@@ -123,7 +123,7 @@ class _TunerPageState extends State<TunerPage> {
                                     child: Superscript(
                                         text: "${tuningOutputArray[0][0]}",
                                         superscript: tuningOutputArray[0].length > 1 ? "${tuningOutputArray[0][1]}" : "",
-                                        style: TextStyles.title.copyWith(
+                                        style: TextStyles.titleMedium.copyWith(
                                             fontSize:  (MediaQuery.of(context).textScaler.scale(80)).clamp(0, 80)
                                         )
                                     ),
@@ -159,7 +159,7 @@ class _TunerPageState extends State<TunerPage> {
                                                     text: tuner.noteNames[tuner.selectedNote[0]][0],
                                                     superscript: tuner.noteNames[tuner.selectedNote[0]].length == 2 ? tuner.noteNames[tuner.selectedNote[0]][1] : "",
                                                     subscript: "${tuner.selectedNote[1]}",
-                                                    style: TextStyles.title.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(50))
+                                                    style: TextStyles.titleMedium.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(50))
                                                 ),
                                               ),
 
