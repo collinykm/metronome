@@ -21,7 +21,10 @@ class BodyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: TextStyles.body.copyWith(fontSize: MediaQuery.of(context).textScaler.scale(14)),);
+    final userScaler = MediaQuery.of(context).textScaler;
+    // Clamp to avoid extreme cases (say, system set to 3x or 0.5x).
+    final dampenedScaler = userScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 1.5);
+    return Text(text, textScaler: dampenedScaler, style: TextStyles.body);
   }
 }
 
@@ -32,9 +35,8 @@ class TitleText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userScaler = MediaQuery.of(context).textScaler;
-
     // Clamp to avoid extreme cases (say, system set to 3x or 0.5x).
-    final dampenedScaler = userScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 1.5);
+    final dampenedScaler = userScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 2);
 
     return Text(text, textScaler: dampenedScaler, style: TextStyles.titleMedium,);
   }

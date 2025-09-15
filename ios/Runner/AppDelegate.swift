@@ -78,7 +78,6 @@ import AVFoundation
                     print(session.category, session.mode)
 
                     print("Audio route: \(session.currentRoute.outputs.map { $0.portName })")
-                    print("Audio route: \(session.currentRoute.outputs.map { $0.portName })")
                 } catch {
                     print("Audio init failed: \(error)")
                 }
@@ -180,7 +179,7 @@ import AVFoundation
     private var phase: Double = 0
 
     func playRefNote() {
-        let start = DispatchTime.now()
+        
         guard refFreq > 0 else { return }
         guard !isRefNotePlaying else { return }
 
@@ -193,28 +192,32 @@ import AVFoundation
         let amp: Float = 0.9
     
         isRefNotePlaying = true
-        
+        print("session.category != .playandrecord: \(session.category != .playAndRecord) \n session: \(session.category)")
         if session.category != .playAndRecord {
             do {
+                print("gonna set the session category to .playAndRecord and activate engine")
                 try session.setCategory(.playAndRecord,
                                                       mode: .default,
                                                       options: [.defaultToSpeaker, .allowBluetooth])
                 try session.setActive(true)
+               
+                
             } catch {
                 print("failed to set session category to .playAndRecord: \(error)")
             }
-            
         }
-  
-    
-  
+        if !audioEngine.isRunning {
+            do {
+                try audioEngine.start()
+            } catch {
+                print("\(error)")
+            }
+        }
+        
         print("ref note player: \(refNotePlayer.isPlaying), audio engine: \(audioEngine.isRunning), source: \(session.currentRoute.outputs.map { $0.portName })")
-        
-        
-        let end = DispatchTime.now()
-        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
-        let timeInterval = Double(nanoTime) / 1_000_000_000
-        print("Took \(timeInterval) seconds")
+  
+
+
         // Add this debug line to see what's happening
         print("Audio session when trying to play: category=\(session.category), options=\(session.categoryOptions)")
 
