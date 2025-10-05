@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -15,6 +16,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// TunerProvider — keeps last reading when silent and guards callbacks
 /// after dispose so you won’t hit “used after being disposed”.
 class TunerProvider with ChangeNotifier {
+  final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
+  final MethodChannel recordingMethodChannel = MethodChannel('recording_method_channel');
+  final EventChannel recordingEventChannel = EventChannel('recording_event_channel');
+
+
   // ───────────────────────── State exposed to UI ──────────────────────────
   double? get frequency => _currentNote.isEmpty ? null : _currentFrequency;
   String? get note      => _currentNote.isEmpty ? null : _currentNote;
@@ -84,8 +90,7 @@ class TunerProvider with ChangeNotifier {
 
   bool needsPriming = true;
   bool isPlaying = false;
-  List _selectedNote = [9, 4];
-  //Note: index 0 represents index in notes list (or how many half notes), in this case 9 = A; index 1 represents octave
+  List _selectedNote = [9, 4]; //index 0 represents index in notes list (or how many half notes), in this case 9 = A; index 1 represents octave
   List get selectedNote => _selectedNote;
   void updateSelectedNote(int noteIndex) async{
     _selectedNote[0] = noteIndex;
@@ -106,12 +111,6 @@ class TunerProvider with ChangeNotifier {
     await prefs.setStringList("refNote", _selectedNote.map((e) => e.toString()).toList());
   }
 
-  final MethodChannel methodChannel = MethodChannel('metronome_method_channel');
-
-
-  void initializePlayer() {
-
-  }
   StreamController<Uint8List>? _controller;
   Future<void> playReferenceFreq() async {
     //getting the hertz
@@ -145,7 +144,7 @@ class TunerProvider with ChangeNotifier {
 
 
 
-
+  //Note: Recording
   // ───────────────────── Initialisation / teardown ────────────────────────
   Future<void> initializeRecorder({int sampleRate = 44100, int bufferSize = 2048}) async {
     final st = await Permission.microphone.request();
@@ -153,19 +152,69 @@ class TunerProvider with ChangeNotifier {
     if (_isInitialized) return;
     _disposed = false;
     _detector   = PitchDetector(audioSampleRate: sampleRate.toDouble(), bufferSize: bufferSize);
-    await _audioCapture.init();
-    await _audioCapture.start(_onAudioData, _onAudioError, sampleRate: sampleRate, bufferSize: bufferSize);
+    if (Platform.isIOS) {iOSAudio(sampleRate, bufferSize);} else {flutterAudio(sampleRate, bufferSize);}
     _isInitialized = true;
     notifyListeners();
   }
-
-  void disposeRecorder() {
-    _disposed = true;
-    _audioCapture.stop();
-    _isInitialized = false;
-    _streamSub?.cancel();
+  
+  Future<void> flutterAudio(int sampleRate, int bufferSize) async {
+    await _audioCapture.init();
+    await _audioCapture.start(_onAudioData, _onAudioError, sampleRate: sampleRate, bufferSize: bufferSize);
   }
 
+
+  StreamSubscription? _sub;
+  Future<void> iOSAudio(int sampleRate, int bufferSize) async {
+    await recordingMethodChannel.invokeMethod("startRecording", {  'sampleRate': sampleRate,
+      'bufferSize': bufferSize,});
+
+    // Listen to native frames; convert bytes -> Float32List; forward to your callback
+    _sub?.cancel();
+    _sub = recordingEventChannel.receiveBroadcastStream().listen((event) {
+      try {
+        if (event is Uint8List) {
+          Uint8List bytes = event;
+
+          // 1) Ensure 4-byte alignment for Float32 view
+          if ((bytes.offsetInBytes & 0x3) != 0) {
+            // copy to get offset == 0
+            bytes = Uint8List.fromList(bytes);
+          }
+
+          // 2) Ensure length is a multiple of 4 (should be, but be defensive)
+          final usableBytes = bytes.lengthInBytes & ~0x3; // drop any tail
+          final f32 = bytes.buffer.asFloat32List(
+            bytes.offsetInBytes,
+            usableBytes >> 2,
+          );
+
+          _onAudioData(f32); // your existing _onAudioData
+        } else if (event is Float32List) {
+          _onAudioData(event);
+        } // ignore others
+      } catch (e) {
+        _onAudioError(e);
+      }
+    }, onError: _onAudioError);
+
+  }
+  
+
+  void disposeRecorder() async {
+    if(Platform.isIOS){
+      await recordingMethodChannel.invokeMethod('stopRecording');
+      await _sub?.cancel();
+      _sub = null;
+    } else {
+      _disposed = true;
+      _audioCapture.stop();
+      _isInitialized = false;
+      _streamSub?.cancel();
+    }
+  }
+
+
+  //Note: Finding pitch of note
   // ─────────────────────────── Internal fields ────────────────────────────
   final FlutterAudioCapture _audioCapture = FlutterAudioCapture();
   late PitchDetector _detector;

@@ -16,6 +16,9 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		EA516EDC31C9043DD9A7E841 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5761A0612262B92E9BBC6816 /* Pods_Runner.framework */; };
+		F0AB02F42E91CC6400AC91F9 /* MetronomeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AB02F22E91CC6400AC91F9 /* MetronomeEngine.swift */; };
+		F0AB02F52E91CC6400AC91F9 /* MetronomePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AB02F32E91CC6400AC91F9 /* MetronomePlugin.swift */; };
+		F0AB02F72E922D1400AC91F9 /* AudioCapturePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AB02F62E922D0B00AC91F9 /* AudioCapturePlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +68,9 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A125A85B20C65125F4F00EBA /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		B73A2AFB8D27D3FB05067C20 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		F0AB02F22E91CC6400AC91F9 /* MetronomeEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomeEngine.swift; sourceTree = "<group>"; };
+		F0AB02F32E91CC6400AC91F9 /* MetronomePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomePlugin.swift; sourceTree = "<group>"; };
+		F0AB02F62E922D0B00AC91F9 /* AudioCapturePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCapturePlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,8 +141,11 @@
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
-				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				F0AB02F22E91CC6400AC91F9 /* MetronomeEngine.swift */,
+				F0AB02F62E922D0B00AC91F9 /* AudioCapturePlugin.swift */,
+				F0AB02F32E91CC6400AC91F9 /* MetronomePlugin.swift */,
+				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -395,7 +404,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				F0AB02F72E922D1400AC91F9 /* AudioCapturePlugin.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+				F0AB02F42E91CC6400AC91F9 /* MetronomeEngine.swift in Sources */,
+				F0AB02F52E91CC6400AC91F9 /* MetronomePlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

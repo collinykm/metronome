@@ -376,6 +376,7 @@ class Section {
 
   Map<String, dynamic> toMap() {
     return {
+      "sectionId": sectionId,
       "sectionName": sectionName,
       "bars": bars,
       "tempo": tempo,
