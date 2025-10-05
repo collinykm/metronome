@@ -13,6 +13,8 @@ import Flutter
         MetronomePlugin.register(with: self.registrar(forPlugin: "MetronomePlugin")!)
       
         IosAudioCapturePlugin.register(with: self.registrar(forPlugin: "IosAudioCapturePlugin")!)
+        MetronomeEngine.shared.warmUpAudioAtLaunch()
+
 
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

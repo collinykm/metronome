@@ -114,19 +114,17 @@ class MetronomeService : Service() {
     override fun onBind(intent: Intent?): IBinder = binder
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Metronome Service",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Keeps metronome playing in background"
-                setSound(null, null)
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Metronome Service",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Keeps metronome playing in background"
+            setSound(null, null)
         }
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun acquireWakeLock() {
@@ -168,6 +166,7 @@ class MetronomeService : Service() {
         if (isMetronomePlaying) {
             return
         }
+        println("\n$accentsList")
         isMetronomePlaying = true
 
         val metronomeTrack = AudioTrack(
@@ -379,6 +378,7 @@ class MetronomeService : Service() {
 
     fun updateAccent(newAccents: MutableList<Int>) {
         accentsList = newAccents
+        println("updated")
     }
 
     fun updateMeter(newMeter: MutableList<Int>) {

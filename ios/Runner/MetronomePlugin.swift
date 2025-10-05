@@ -46,9 +46,6 @@ final class MetronomePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         case "playRefNote": engine.playRefNote(); result(nil)
         case "updateRefNote": if let v = call.arguments as? Double { engine.updateRefNote(v) }; result(nil)
         case "pauseRefNote": engine.pauseRefNote(); result(nil)
-        case "isMetronomePlaying": result(engine.isMetronomePlaying)
-        case "isSongPlaying": result(engine.isSongPlaying)
-        case "isRefNotePlaying": result(engine.isRefNotePlaying)
         default: result(FlutterMethodNotImplemented)
         }
     }

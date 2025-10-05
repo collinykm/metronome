@@ -31,15 +31,24 @@ class MetronomeProvider with ChangeNotifier{
   late SharedPreferences prefs;
   void initProvider() async {
     prefs = await SharedPreferences.getInstance();
-    _tempo = prefs.getInt("tempo") ?? 120;
+
+    updateTempo(prefs.getInt("tempo") ?? 120);
     updateKnobAngleFromTempo(tempo);
+
     List<String>? accentsStringList = prefs.getStringList("accents");
     _accentsList = accentsStringList != null ? accentsStringList.map(int.parse).toList() : [1, 1, 1, 1];
+    await methodChannel.invokeMethod("updateAccent", accentsList);
+
     List<String>? meterStringList = prefs.getStringList("meter");
     _meter = meterStringList != null ? meterStringList.map(int.parse).toList() : [4, 4];
+    await methodChannel.invokeMethod("updateMeter", meter);
+
     currentBeepingMetronomeList = List.filled(meter[0], false);
+
     int? subdivisionIndex = prefs.getInt("subdivisionIndex");
     _subdivision = subdivisionIndex != null ? allSubdivisionsMap[meter[1]]![subdivisionIndex] : allSubdivisionsMap[4]![0];
+    await methodChannel.invokeMethod("updateSubdivision", subdivisionList);
+
     notifyListeners();
   }
 
