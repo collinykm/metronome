@@ -65,7 +65,7 @@ final class MetronomeEngine {
         let frames = AVAudioFrameCount(sampleRate * 0.05)
         let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frames)!
         buf.frameLength = frames
-        buf.floatChannelData![0].assign(repeating: 0, count: Int(frames))
+        buf.floatChannelData![0].update(repeating: 0, count: Int(frames))
         playerNode.scheduleBuffer(buf, at: nil, options: [])
         print("warmup done")
     }
@@ -147,7 +147,7 @@ final class MetronomeEngine {
 
         metronomeScheduledSampleTime = pt.sampleTime + AVAudioFramePosition(0.06 * sampleRate)
         currentPulse = 0
-        scheduleBeats()
+        scheduleMetronome()
     }
 
     func pauseMetronome() {
@@ -164,10 +164,25 @@ final class MetronomeEngine {
         isSongPlaying = true
 
         startEngineIfNeeded()
-        playerNode.stop()
-        playerNode.play()
+        if !playerNode.isPlaying { playerNode.play() }  // keep clock alive
 
-        //scheduleSongLoop(song)
+        // wait for a real clock
+        var nt: AVAudioTime?
+        for _ in 0..<50 {
+            nt = playerNode.lastRenderTime
+            if nt != nil { break }
+            usleep(1000)
+        }
+        guard let nodeTime = nt,
+              let pt = playerNode.playerTime(forNodeTime: nodeTime) else {
+            print("no playerTime yet, delaying first beat")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { self.scheduleSong(song: song) }
+            return
+        }
+
+        metronomeScheduledSampleTime = pt.sampleTime + AVAudioFramePosition(0.06 * sampleRate)
+
+        scheduleSong(song: song)
         updateNowPlaying(title: "Song", subtitle: "Playing song")
     }
 
@@ -233,50 +248,13 @@ final class MetronomeEngine {
         if isRefNotePlaying { updateNowPlaying(title: "Reference Note", subtitle: "\(Int(refFreq))Hz") }
     }
 
-    // MARK: - Scheduling (sample-accurate enough for metronome)
-    
-    private func scheduleSilence(frames: Int,
-                                 at sampleTime: AVAudioFramePosition,
-                                 completion: (() -> Void)? = nil) {
-        let fmt = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
-        guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: AVAudioFrameCount(frames)) else { return }
-        buf.frameLength = buf.frameCapacity
-        buf.floatChannelData![0].update(repeating: 0.0, count: Int(buf.frameLength))
-        let when = AVAudioTime(sampleTime: sampleTime, atRate: sampleRate)
-        playerNode.scheduleBuffer(buf, at: when, options: []) { completion?() }
-    }
-    
-    private func scheduleMetronome() {
-        print("gonna play metronome")
+    // MARK: - Metronome (sample-accurate enough for metronome)
 
-        var attempts = 0
-        var nodeTime: AVAudioTime?
-        while nodeTime == nil && attempts < 50 {
-            nodeTime = playerNode.lastRenderTime
-            if nodeTime == nil {
-                usleep(1000)
-                attempts += 1
-            }
-        }
-        let playerTime = playerNode.playerTime(forNodeTime: nodeTime!)
-         metronomeScheduledSampleTime = playerTime!.sampleTime
-        
-        
-        // Reset pulse counter
-        currentPulse = 0
-
-        scheduleBeats()
-    }
-        
-        
-        
     var metronomeScheduledSampleTime: AVAudioFramePosition = 0
     var currentPulse = 0
-    
-    func scheduleBeats() {
+    func scheduleMetronome() {
         guard isMetronomePlaying else { return }
 
-        print("scheduled a beat")
         
         // Capture current state to ensure consistency during this scheduling pass
         let currentTempo = tempo
@@ -318,7 +296,81 @@ final class MetronomeEngine {
             guard self.isMetronomePlaying else { return }
             self.metronomeScheduledSampleTime += beatIntervalSamples
             self.currentPulse = (self.currentPulse + 1) % (currentMeter * currentSubdivision)
-            self.scheduleBeats()
+            self.scheduleMetronome()
+        }
+    }
+    
+    //MARK: - playing songs
+    var currentSectionIndex = 0
+    var numSectionClicksPlayed = 0
+    var currentSectionPulse = 0
+    private func scheduleSong(song: [String: Any]) {
+        if (currentSectionIndex == (song["sectionsList"] as! [[String: Any]]).count || !isSongPlaying){   //either ran out of sections to play or song ended
+            
+            currentSectionIndex = 0
+            numSectionClicksPlayed = 0
+            currentSectionPulse = 0
+            isSongPlaying = false
+            emitEvent?(["type": "alert", "message": "song ended"])
+            return
+        }
+        
+        let section = (song["sectionsList"] as! [[String: Any]])[currentSectionIndex]
+        let tempo = section["tempo"] as! Int
+        let bars = section["bars"] as! Int
+        let accentsList = section["accentsList"] as! [Int]
+        let meter = section["meter"] as! [Int]
+        let subdivision = section["subdivision"] as! [Int]
+        let totalPulses = bars * meter[0] * subdivision[0]
+        
+       
+        
+        let beatIntervalSec = 60.0 / Double(tempo * subdivision[0])
+        
+        let beatIntervalSamples = AVAudioFramePosition(beatIntervalSec * sampleRate)
+        
+        
+        let currentBeat = (currentSectionPulse / subdivision[0]) % meter[0] + 1
+        let pulseInBeat = currentSectionPulse % subdivision[0] + 1
+        
+        var click: [Float]
+        if (currentPulse % subdivision[0] == 0){
+            click = clicksList[accentsList[currentBeat - 1] * subdivision[pulseInBeat]]
+        } else {
+            click = clicksList[subdivision[pulseInBeat]]
+        }
+
+
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(click.count))!
+        buffer.frameLength = buffer.frameCapacity
+        let ptr = buffer.floatChannelData![0]
+
+        // write click
+        click.withUnsafeBufferPointer { src in
+            ptr.update(from: src.baseAddress!, count: click.count)
+        }
+        
+
+        let beatTime = AVAudioTime(sampleTime: metronomeScheduledSampleTime, atRate: sampleRate)
+        
+        playerNode.scheduleBuffer(buffer, at: beatTime, options: []) { [weak self] in
+            guard let self = self else { return }
+            emitEvent?(["type": "song", "beat": currentBeat, "section": section["sectionId"]! ])
+            numSectionClicksPlayed += 1
+            
+            if numSectionClicksPlayed >= totalPulses{  //this is where the section finishes
+                
+                currentSectionIndex += 1
+                numSectionClicksPlayed = 0
+                currentSectionPulse = 0
+            } else {
+                self.currentSectionPulse = (self.currentSectionPulse + 1) % (meter[0] * subdivision[0])
+            }
+            
+            self.metronomeScheduledSampleTime += beatIntervalSamples
+
+            self.scheduleSong(song: song)
         }
     }
 
