@@ -56,25 +56,18 @@ final class MetronomeEngine {
 
     func initAudio() {
         setupAudioGraph()
-        playerNode.play()
-        
-        //play a silent click to warm up the playerNode
-        let click = clicksList[0]
-    
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
-        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(click.count))!
-        buffer.frameLength = buffer.frameCapacity
-        let ptr = buffer.floatChannelData![0]
+        startEngineIfNeeded()
 
-        // write click
-        click.withUnsafeBufferPointer { src in
-            ptr.update(from: src.baseAddress!, count: click.count)
-        }
-        
-        let beatTime = AVAudioTime(sampleTime: metronomeScheduledSampleTime, atRate: sampleRate)
-        
-        playerNode.scheduleBuffer(buffer, at: beatTime, options: [])
-        print("played/warmed")
+        if !playerNode.isPlaying { playerNode.play() }
+
+        // schedule silence **immediate** (at:nil), not at sampleTime 0
+        let fmt = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        let frames = AVAudioFrameCount(sampleRate * 0.05)
+        let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frames)!
+        buf.frameLength = frames
+        buf.floatChannelData![0].assign(repeating: 0, count: Int(frames))
+        playerNode.scheduleBuffer(buf, at: nil, options: [])
+        print("warmup done")
     }
 
     // MARK: - Setup
@@ -136,10 +129,25 @@ final class MetronomeEngine {
         isMetronomePlaying = true
 
         startEngineIfNeeded()
-        playerNode.play()
-        print("playMetronome called")
-        scheduleMetronome()
-        updateNowPlaying(title: "Metronome", subtitle: "BPM: \(tempo)")
+        if !playerNode.isPlaying { playerNode.play() }  // keep clock alive
+
+        // wait for a real clock
+        var nt: AVAudioTime?
+        for _ in 0..<50 {
+            nt = playerNode.lastRenderTime
+            if nt != nil { break }
+            usleep(1000)
+        }
+        guard let nodeTime = nt,
+              let pt = playerNode.playerTime(forNodeTime: nodeTime) else {
+            print("no playerTime yet, delaying first beat")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { self.scheduleMetronome() }
+            return
+        }
+
+        metronomeScheduledSampleTime = pt.sampleTime + AVAudioFramePosition(0.06 * sampleRate)
+        currentPulse = 0
+        scheduleBeats()
     }
 
     func pauseMetronome() {
