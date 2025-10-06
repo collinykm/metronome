@@ -51,29 +51,30 @@ final class MetronomeEngine {
     private var refFreq: Double = 440.0
     private var currentFreq: AtomicDouble = .init(0)
 
-    private init() {
-        setupAudioGraph()
-    }
     
-    private var didWarmUp = false
 
-    func warmUpAudioAtLaunch() {
-        guard !didWarmUp else { return }
-        startEngineIfNeeded()
 
-        // spin up the player/render thread with ~100 ms of silence
-        let frames = AVAudioFrameCount(sampleRate * 0.10) // 100 ms
-        let fmt = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
-        let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frames)!
-        buf.frameLength = frames
-        buf.floatChannelData![0].update(repeating: 0.0, count: Int(frames))
-
-        playerNode.stop()
+    func initAudio() {
+        setupAudioGraph()
         playerNode.play()
-        playerNode.scheduleBuffer(buf, at: nil, options: []) { [weak self] in
-            self?.didWarmUp = true
+        
+        //play a silent click to warm up the playerNode
+        let click = clicksList[0]
+    
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(click.count))!
+        buffer.frameLength = buffer.frameCapacity
+        let ptr = buffer.floatChannelData![0]
+
+        // write click
+        click.withUnsafeBufferPointer { src in
+            ptr.update(from: src.baseAddress!, count: click.count)
         }
-        print("warmed up")
+        
+        let beatTime = AVAudioTime(sampleTime: metronomeScheduledSampleTime, atRate: sampleRate)
+        
+        playerNode.scheduleBuffer(buffer, at: beatTime, options: [])
+        print("played/warmed")
     }
 
     // MARK: - Setup
@@ -119,7 +120,7 @@ final class MetronomeEngine {
     }
 
     private func startEngineIfNeeded() {
-        if engine.isRunning { return }
+        if engine.isRunning {print("engine already running"); return }
         do {
             try engine.start()
         } catch {
@@ -135,9 +136,8 @@ final class MetronomeEngine {
         isMetronomePlaying = true
 
         startEngineIfNeeded()
-        playerNode.stop()
         playerNode.play()
-        print("afjasd;lf\n\n")
+        print("playMetronome called")
         scheduleMetronome()
         updateNowPlaying(title: "Metronome", subtitle: "BPM: \(tempo)")
     }
@@ -183,7 +183,7 @@ final class MetronomeEngine {
             let frames = Int(frameCount)
             let freq = self.currentFreq.value
             let phaseInc = 2.0 * Double.pi * freq / self.sampleRate
-            let volume: Float = 0.3
+            let volume: Float = 1
 
             for buffer in abl {
                 let ptr = buffer.mData!.assumingMemoryBound(to: Float.self)
@@ -233,7 +233,7 @@ final class MetronomeEngine {
         let fmt = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
         guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: AVAudioFrameCount(frames)) else { return }
         buf.frameLength = buf.frameCapacity
-        buf.floatChannelData![0].assign(repeating: 0.0, count: Int(buf.frameLength))
+        buf.floatChannelData![0].update(repeating: 0.0, count: Int(buf.frameLength))
         let when = AVAudioTime(sampleTime: sampleTime, atRate: sampleRate)
         playerNode.scheduleBuffer(buf, at: when, options: []) { completion?() }
     }
@@ -243,35 +243,19 @@ final class MetronomeEngine {
 
         var attempts = 0
         var nodeTime: AVAudioTime?
-        while nodeTime == nil && attempts < 50 { // Increased attempts
+        while nodeTime == nil && attempts < 50 {
             nodeTime = playerNode.lastRenderTime
             if nodeTime == nil {
-                usleep(1000) // 1ms sleep - more responsive than Task.sleep
+                usleep(1000)
                 attempts += 1
             }
         }
+        let playerTime = playerNode.playerTime(forNodeTime: nodeTime!)
+         metronomeScheduledSampleTime = playerTime!.sampleTime
         
-        guard let nt = nodeTime, let pt = playerNode.playerTime(forNodeTime: nt) else {
-                // fallback: start from zero with a small lead
-                metronomeScheduledSampleTime = AVAudioFramePosition(Int(sampleRate * 0.05))
-                return scheduleBeats()
-            }
-
-            // small, deterministic lead (latency + 10ms)
-            let sess = AVAudioSession.sharedInstance()
-            let leadSec = sess.outputLatency + sess.ioBufferDuration + engine.outputNode.presentationLatency + 0.01
-            let leadFrames = AVAudioFramePosition(leadSec * sampleRate)
-
-            // 1) base start time (in the future)
-            metronomeScheduledSampleTime = pt.sampleTime + leadFrames
-
-            // 2) pre-roll ~60 ms of silence to “warm” the timeline
-            let preRollFrames = AVAudioFramePosition(sampleRate * 0.06) // tweak if needed (40–80ms is typical)
-            scheduleSilence(frames: Int(preRollFrames), at: metronomeScheduledSampleTime)
-
-            // 3) first audible click starts immediately after the pre-roll
-            metronomeScheduledSampleTime += preRollFrames
-
+        
+        // Reset pulse counter
+        currentPulse = 0
 
         scheduleBeats()
     }
