@@ -329,7 +329,7 @@ class MetronomeService : Service() {
             try {
                 var phase = 0.0
                 val bufferSize = sampleRate / 100 // 10ms buffers
-                val volume = 0.3f
+                val volume = 1f
                 println("\n\n playing frequency $currentFreq\n\n")
 
                 while (!shouldStop) {

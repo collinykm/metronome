@@ -197,6 +197,7 @@ final class MetronomeEngine {
         UIApplication.shared.isIdleTimerDisabled = true
         isRefNotePlaying = true
         currentFreq.value = refFreq
+        print("going to play the frequency \(currentFreq.value)")
 
         // Create a source node that generates a sine wave in real-time
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
@@ -243,6 +244,7 @@ final class MetronomeEngine {
     func updateSubdivision(_ newSubdivision: [Int]) { subdivision = newSubdivision }
 
     func updateRefNote(_ newFreq: Double) {
+        print("received new frequency: \(newFreq)")
         refFreq = newFreq
         currentFreq.value = newFreq
         if isRefNotePlaying { updateNowPlaying(title: "Reference Note", subtitle: "\(Int(refFreq))Hz") }

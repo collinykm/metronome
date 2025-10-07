@@ -41,6 +41,8 @@ class TunerProvider with ChangeNotifier {
     _transposeSemitones = prefs.getInt("transposeSemitones") ?? 0;
     List<String>? selNote = prefs.getStringList("refNote");
     _selectedNote = selNote != null ? selNote.map(int.parse).toList() : [9, 4];
+    updateSelectedNote(_selectedNote[0]);
+    updateSelectedNoteOctave(_selectedNote[1]);
   }
 
 
@@ -66,12 +68,13 @@ class TunerProvider with ChangeNotifier {
   void updateA4Freq(int freq) async{
     _A4_FREQ = freq;
     notifyListeners();
+    updateSelectedNote(_selectedNote[0]);
     await prefs.setInt("A4Freq", _A4_FREQ);
   }
   int _transposeSemitones = 0;
   int get transposeSemitones => _transposeSemitones;
   void updateTransposeSemitones(int semitones) async {
-    _transposeSemitones = semitones; //TODO: possible bug here
+    _transposeSemitones = semitones;
     notifyListeners();
     await prefs.setInt("transposeSemitones", _transposeSemitones);
   }
@@ -119,7 +122,6 @@ class TunerProvider with ChangeNotifier {
 
     isPlaying = true;
     notifyListeners();
-    print("\n sending over a frequency of $freq \n");
 
     methodChannel.invokeMethod("playRefNote");
 
@@ -299,7 +301,7 @@ class TunerProvider with ChangeNotifier {
 
 
   _NoteData _freqToNoteAndCents(double f) {
-    final double midiExact = 69 + 12 * (log(f / 440) / ln2);
+    final double midiExact = 69 + 12 * (log(f / _A4_FREQ) / ln2);
     final int    midiInt   = midiExact.round();
     //For reference, C4 has a midiInt of 60. this means C0 has a midiInt of 12, which matches with the octave var. to transpose, subtract the transposition
     final int transposedNoteIndex = midiInt - _transposeSemitones;
