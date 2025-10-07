@@ -8,6 +8,7 @@ import "package:metronome_app/components/selector_button.dart";
 import "package:metronome_app/screens/songs/section/song_accent_selector_logic.dart";
 import "package:metronome_app/screens/songs/section/song_meter_selector_logic.dart";
 import "package:metronome_app/screens/songs/section/song_subdivision_selector_logic.dart";
+import "package:metronome_app/service/metronome_provider.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:metronome_app/theme/icons.dart";
 import "package:provider/provider.dart";
@@ -72,7 +73,14 @@ class _SongPageState extends State<SongPage> {
             actions: [
               AppIconButton(
                 onPressed: () {
-                  songsProvider.playSong(song.songId);
+                  if (songsProvider.isPlaying) {
+                    songsProvider.pauseSong();
+                  } else {
+                    if (Provider.of<MetronomeProvider>(context, listen: false).isPlaying){
+                      Provider.of<MetronomeProvider>(context, listen: false).Pause();
+                    }
+                    songsProvider.playSong(song.songId);
+                  }
                 },
                 icon: song.songId == songsProvider.currentlyPlayingSongId ? AppIcons.pause() : AppIcons.play(),
               ),

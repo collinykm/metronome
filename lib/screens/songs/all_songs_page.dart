@@ -4,6 +4,7 @@ import "package:metronome_app/components/app_icon_button.dart";
 import "package:metronome_app/components/popup_dialogue.dart";
 import "package:metronome_app/components/popup_input_dialogue.dart";
 import "package:metronome_app/screens/songs/song_page.dart";
+import "package:metronome_app/service/metronome_provider.dart";
 import "package:metronome_app/service/songs_provider.dart";
 import "package:metronome_app/theme/colors.dart";
 import "package:metronome_app/theme/icons.dart";
@@ -142,16 +143,23 @@ class _AllSongsPageState extends State<AllSongsPage> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        //the play button
+                                        //Note: the play button
                                         AppIconButton(
                                           onPressed: () {
-                                            songsProvider.playSong(song.songId);
+                                            if (songsProvider.isPlaying) {
+                                              songsProvider.pauseSong();
+                                            } else {
+                                              if (Provider.of<MetronomeProvider>(context, listen: false).isPlaying){
+                                                Provider.of<MetronomeProvider>(context, listen: false).Pause();
+                                              }
+                                              songsProvider.playSong(song.songId);
+                                            }
                                           },
                                           icon: song.songId == songsProvider.currentlyPlayingSongId ? AppIcons.pause() : AppIcons.play(),
                                         ),
 
 
-                                        //the edit button
+                                        //Note: the edit button
                                         AppIconButton(
                                           onPressed: (){
                                             HapticFeedback.mediumImpact();

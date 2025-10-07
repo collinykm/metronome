@@ -11,6 +11,7 @@ import 'package:metronome_app/screens/metronome/metronome_accent_selector_logic.
 import 'package:metronome_app/screens/metronome/metronome_meter_selector_logic.dart';
 import 'package:metronome_app/screens/metronome/metronome_subdivision_selector_logic.dart';
 import 'package:metronome_app/service/metronome_provider.dart';
+import 'package:metronome_app/service/songs_provider.dart';
 import 'package:metronome_app/theme/colors.dart';
 import 'package:metronome_app/theme/icons.dart';
 import 'package:provider/provider.dart';
@@ -98,6 +99,9 @@ class _MetronomePageState extends State<MetronomePage> {
                                     if (metronome.isPlaying){
                                       metronome.Pause();
                                     } else {
+                                      if (Provider.of<SongsProvider>(context, listen: false).isPlaying) {
+                                        Provider.of<SongsProvider>(context, listen: false).pauseSong();
+                                      }
                                       metronome.Play();
                                     }
                                   },

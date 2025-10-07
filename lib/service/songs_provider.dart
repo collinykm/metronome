@@ -90,6 +90,7 @@ class SongsProvider with ChangeNotifier{
 
   //things to do with playing a song
   bool _isPlaying = false;
+  bool get isPlaying => _isPlaying;
   String _currentlyPlayingSongId = "";
   String get currentlyPlayingSongId => _currentlyPlayingSongId;
 
@@ -98,14 +99,7 @@ class SongsProvider with ChangeNotifier{
   void playSong(String songId) async {
 
     if (_isPlaying) {
-      print("uhhh");
-      _isPlaying = false;
-      await methodChannel.invokeMethod("pauseSong");
-
-      _currentlyPlayingSongId = "";
-      notifyListeners();
       return;
-
     }
     _currentlyPlayingSongId = songId;
 
@@ -137,6 +131,14 @@ class SongsProvider with ChangeNotifier{
     }, onError: (e) {
       print(e);
     });
+  }
+
+  void pauseSong() async {
+    _isPlaying = false;
+    await methodChannel.invokeMethod("pauseSong");
+
+    _currentlyPlayingSongId = "";
+    notifyListeners();
   }
 
 
